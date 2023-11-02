@@ -448,10 +448,6 @@ class LoadGame {
   }
 
   init() {
-    this.followtxt = document.getElementById('follow_player');
-    document.getElementById('follow_player').textContent = `Paper: ${this.ammunition}`;
-    document.getElementById('Score').textContent = `Score: ${this.score}`;
-    this.canvas = document.querySelector('canvas');
     this.textPosition = new THREE.Vector3();
     // Create a new renderer for the world with specific parameters
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -459,9 +455,14 @@ class LoadGame {
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setClearColor(0x91fff8);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-
+    
     // Add the renderer to the HTML body
     document.body.appendChild(this.renderer.domElement);
+    
+    this.followtxt = document.getElementById('follow_player');
+    document.getElementById('follow_player').textContent = `Paper: ${this.ammunition}`;
+    document.getElementById('Score').textContent = `Score: ${this.score}`;
+    this.canvas = document.querySelector('canvas');
 
     // Add an event listener for window resize
     window.addEventListener('resize', () => { this.WindowResponse(); }, false);
