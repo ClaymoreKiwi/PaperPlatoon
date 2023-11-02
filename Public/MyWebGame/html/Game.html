@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>Bryce's Game</title>
+  <link href="../css/style.css" rel="stylesheet" type="text/css" />
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.157.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.157.0/examples/jsm/"
+    }
+  }
+</script>
+</head>
+
+<body onload="timeOut()" style="margin: 0;">
+
+  <div id="loader"></div>
+  
+  <div style="display: none;" id="myDiv" class="animate-bottom">
+    
+    <h1 align="center">welcome to Paper Platoon</h1>
+    <button onclick="window.location.href='../index.html'">back to home</button>
+
+    <div id="follow_player">Paper: 0</div>
+    <div id="Score", align: right>Score: 0</div>
+    <script type="module" src="../js/combined.js"></script>
+  </div>
+  
+  <script>
+    let timeOutNum;
+
+    function timeOut() {
+      timeOutNum = setTimeout(showPage, 3000);
+    };
+
+    function showPage() {
+      document.getElementById("loader").style.display = "none";
+      document.getElementById("myDiv").style.display = "block";
+    }
+  </script>
+</body>
+
+</html>
