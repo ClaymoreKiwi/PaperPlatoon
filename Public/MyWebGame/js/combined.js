@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-//import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 class CharacterController {
   constructor(params) {
@@ -36,25 +35,6 @@ class CharacterController {
 
       this.target = this.model;
       this.params.scene.add(this.target);
-
-      this.mixer = new THREE.AnimationMixer(this.target);
-
-      this.manager = new THREE.LoadingManager();
-
-      const onLoad = (animName, anim) => {
-        const clip = anim.animations[0];
-        const action = this.mixer.clipAction(clip);
-
-        this.animationsS[animName] = {
-          clip: clip,
-          action: action,
-        };
-      };
-
-      const loader = new GLTFLoader(this.manager);
-      loader.load('../animations/jogging.gltf', (a) => { onLoad('walk', a); });
-      loader.load('../animations/run.gltf', (a) => { onLoad('run', a); });
-      loader.load('../animations/idle.gltf', (a) => { onLoad('idle', a); });
     });
   }
 
@@ -73,9 +53,20 @@ class CharacterController {
     return this.velocity.clone().normalize();
   }
 
-  shoot()
-  {
-    
+
+  shoot(){
+      if (this.ammunition > 0 && !this.isFiring) {
+        this.ammunition -= 1;
+        this.isFiring = true;
+
+        const bullet = new Bullet(this.params.scene, this.target);
+        bullet.shoot();
+        this.bullet = bullet;
+        // Set a timeout to reset the firing state after a delay
+        setTimeout(() => {
+          this.isFiring = false;
+        }, 400);
+      }
   }
 
   update(timeInSeconds) {
@@ -124,19 +115,15 @@ class CharacterController {
       Q.setFromAxisAngle(A, 4.0 * -Math.PI * timeInSeconds * this.acceleration.y);
       R.multiply(Q);
     }
+
     if (this.input.keys.space) {
-      if (this.ammunition > 0 && !this.isFiring) {
-        this.ammunition -= 1;
-        this.isFiring = true;
-
-        this.shoot();
-        // Set a timeout to reset the firing state after a delay
-        setTimeout(() => {
-          this.isFiring = false;
-        }, 400);
-      }
+      this.shoot();
     }
-
+    if(this.bullet)
+    {
+      this.bullet.update(timeInSeconds);
+    }
+  
     //set the new position of the character after copying R
     controlObject.quaternion.copy(R);
 
@@ -167,7 +154,50 @@ class CharacterController {
       this.mixer.update(timeInSeconds);
     }
   }
-};
+}
+
+class Bullet {
+  constructor(scene, player) {
+    this.scene = scene;
+    this.player = player;
+    this.bullets = [];
+  }
+
+  shoot() {
+    // Create a new bullet
+    const geometry = new THREE.SphereGeometry(2, 32, 32);
+    const material = new THREE.MeshStandardMaterial({ color: 0xAAAAAA });
+    const bullet = new THREE.Mesh(geometry, material);
+
+    // Set the initial position and direction
+    bullet.position.copy(this.player.position).add(new THREE.Vector3(0,10,0));
+
+    // Ensure the player has a valid rotation quaternion
+    if (this.player.rotation) {
+      const direction = new THREE.Vector3(0, 0, 1);
+      direction.applyQuaternion(this.player.quaternion);
+
+      //set the velocity
+      bullet.velocity = direction.clone().multiplyScalar(20);
+    } else {
+      console.warn('Player rotation is not valid.');
+      bullet.velocity = new THREE.Vector3(0, 0, 1);
+    }
+
+    // Add the bullet to the scene
+    this.scene.add(bullet);
+
+    // Store the bullet for later updates
+    this.bullets.push(bullet);
+  }
+
+  update(timeInSeconds) {
+    for (const bullet of this.bullets) {
+      // Update the bullet's position
+      bullet.position.add(bullet.velocity.clone().multiplyScalar(timeInSeconds));
+    }
+  }
+}
 
 //has all the flags for the directional movement
 class CharacterControllerInput {
@@ -188,6 +218,9 @@ class CharacterControllerInput {
     //console.log(this.ammunition);
     document.addEventListener('keydown', (event) => this.onKeyDown(event), false);
     document.addEventListener('keyup', (event) => this.onKeyUp(event), false);
+    document.addEventListener('touchstart',(event) => this.TouchEvent(event), false);
+    document.addEventListener('touchend',(event) => this.TouchEvent(event), false);
+
   }
   //set flaggs based on the keystate down
   onKeyDown(event) {
@@ -235,7 +268,66 @@ class CharacterControllerInput {
         break;
     }
   }
-}
+    // Handle touchstart events for virtual buttons
+    TouchEvent() {
+        moveForwardButton.addEventListener('touchstart', () => {
+          // Handle touch start for moving forward
+          this.keys.forward = true;
+        });
+
+        moveForwardButton.addEventListener('touchend', () => {
+          // Handle touch end for moving forward
+            this.keys.forward = false;
+        });
+
+        moveBackwardButton.addEventListener('touchstart', () => {
+          // Handle touch start for moving backward
+            this.keys.backward = true;
+        });
+
+        moveBackwardButton.addEventListener('touchend', () => {
+          // Handle touch end for moving backward
+            this.keys.backward = false;
+        });
+        turnLeft.addEventListener('touchstart', () => {
+          // Handle touch start for Turning Left
+            this.keys.left = true;
+        });
+  
+        turnLeft.addEventListener('touchend', () => {
+          // Handle touch end for turning left
+            this.keys.left = false;
+        });
+        turnRight.addEventListener('touchstart', () => {
+          // Handle touch start for Turning right
+            this.keys.right = true;
+        });
+  
+        turnRight.addEventListener('touchend', () => {
+          // Handle touch end for Turning right
+            this.keys.right = false;
+        });
+        
+        sprintButton.addEventListener('touchstart', () => {
+          // Handle touch start for sprinting
+            this.keys.shift = true;
+        });
+  
+        sprintButton.addEventListener('touchend', () => {
+          // Handle touch end for sprinting
+          this.keys.shift = false;
+        });
+        shootButton.addEventListener('touchstart', () => {
+          // Handle touch start for shooting
+            this.keys.space = true;
+        });
+  
+          shootButton.addEventListener('touchend', () => {
+          // Handle touch end for shooting
+            this.keys.space = false;
+        });
+    }
+  }
 
 //camera positioning to the player
 class ThirdPersonCamera {
@@ -288,20 +380,27 @@ class WallManager {
 
   createWall(geometry, initialPosition, numberOfCubes, offset, orientation, speed) {
 
+    //loop through the walls passed in in load Game
     for (let i = 0; i < numberOfCubes; i++) {
-      const material = this.getRandomMaterial();
-      const wall = new THREE.Mesh(geometry, material);
-      const randomHeight = Math.random() * (this.maxHeight - this.minHeight) + this.minHeight;
-      const position = initialPosition.clone().add(new THREE.Vector3(
+      const material = this.getRandomMaterial(); //texture assignment
+      const wall = new THREE.Mesh(geometry, material); // create a new wall with that texture
+      const randomHeight = Math.random() * (this.maxHeight - this.minHeight) + this.minHeight; // set a random height
+      const position = initialPosition.clone().add(new THREE.Vector3( // set the wall position
+        //dependong on the orientation add walls along the edge of the plane with a given offset
         orientation === 'x' ? i * offset : 0, // X-axis position
         randomHeight, // Half the cube height
         orientation === 'z' ? i * offset : 0  // Z-axis position
       ));
 
+      //position the wall 
       wall.position.copy(position);
+      //scale the wall
       wall.scale.setY(randomHeight / 10);
+      //add wall to array
       this.walls.push(wall);
+      //add the wall to teh scene
       this.scene.add(wall);
+      //add the speed of the occilation to the speed array
       this.speeds.push(speed);
       this.startTimes.push(performance.now());
     }
@@ -310,14 +409,15 @@ class WallManager {
   update() {
     const currentTime = performance.now();
     //move the walls in the array
-    this.walls.forEach((wall, index) => {
-      const elapsedTime = currentTime - this.startTimes[index];
-      const range = this.maxHeight - this.minHeight;
+    this.walls.forEach((wall, index) => { // go through each all in the array
+      const elapsedTime = currentTime - this.startTimes[index]; // get the elapsed time and subtract the start time
+      const range = this.maxHeight - this.minHeight; // set the range by the max width and height
       const y = (Math.sin((elapsedTime / this.speeds[index]) + (index * 0.2)) * 0.5 + 0.5) * range + this.minHeight;
-      wall.position.setY(y);
+      wall.position.setY(y); // set position by the sin wave calculation
     });
   }
-  
+
+  //an array of materials for the wall
   getRandomMaterial() {
     const materials = [
       new THREE.TextureLoader().load('../images/paper_blue.png'),
@@ -326,18 +426,22 @@ class WallManager {
       new THREE.TextureLoader().load('../images/paperborder.png'),
       new THREE.TextureLoader().load('../images/paper_yellow.png'),
     ];
+    //assignment of random texture based off the array index
     const randomTexture = materials[Math.floor(Math.random() * materials.length)];
+    //return that indexed item back to the material
     return new THREE.MeshStandardMaterial({ map: randomTexture });
   }
 }
 
 //raycast collisions for the walls and the player
 class RaycastCollision {
-  constructor(player, wallManager) {
+  constructor(player, wallManager, enemies, sound) {
     this.player = player;
     this.wallManager = wallManager;
     this.raycaster = new THREE.Raycaster(undefined, undefined, 0, 10);
     this.direction = player.Direction;
+    this.spawner = enemies;
+    this.sound = sound;
   }
 
   checkCollision() {
@@ -363,26 +467,50 @@ class RaycastCollision {
       this.raycaster.ray.direction.copy(worldDirection).normalize();
       //console.log(worldDirection);
     }
+    // Check for intersections with objects in the scene
+    const wallIntersections = this.raycaster.intersectObjects(this.wallManager.walls, true);
+    //the models are loaded asynchronosly so we catch the error while the model is still loading
+    try{ 
+    this.enemyIntersections = this.raycaster.intersectObjects(this.spawner.enemies.map(enemy => enemy.model), true);
+    }
+    catch{/*console.log("waiting for model layer to load");*/}
 
-    // Check for intersections with walls
-    const intersections = this.raycaster.intersectObjects(this.wallManager.walls, true);
-
-    if (intersections.length > 0) {
-      // Collision occurred, handle it here
+    if (wallIntersections.length > 0) {
       //console.log("Raycast Hit");
       if (this.player.velocity.z > 0) {
         //take away velocity when the player approaches the wall in a forward manner
         this.player.velocity.z -= 25;
       }
       if (this.player.velocity.z < 0) {
-        //add velocity when player is movin gin a backward manner
+        //add velocity when player is moving in a backward manner
         this.player.velocity.z += 15;
       }
     }
+    if (this.enemyIntersections.length > 0) {
+      this.sound.play();
+      location.reload(); // place holder for death of the player
+    }
   }
-
 }
 
+//particle system
+class partilceSystem{
+  constructor(){
+    
+  }
+  init(){
+  const radius = 7;
+  const widthSegments = 12;
+  const heightSegments = 8;
+  const geom = new THREE.SphereGeometry(radius, widthSegments, heightSegments);
+  const mats = new THREE.PointsMaterial({color: 'red', size: 0.5});
+
+  const points = new THREE.Points(geom, mats);
+  this.scene.add(points);
+  }
+}
+
+//enemy logic
 class Enemy {
   constructor(scene, position, scale = 1, player) {
     this.scene = scene;
@@ -390,53 +518,122 @@ class Enemy {
     this.scale = scale;
     this.model = null;
     this.player = player;
-    
-    this.loadModel();
-  }
-  followPlayer() {
-    // Calculate the direction from the enemy to the player
-    const direction = new THREE.Vector3();
-    direction.subVectors(this.player.position, this.position);
-    direction.normalize();
+    this.forwardDirection = new THREE.Vector3(0, 0, 1);
 
-    // Define a speed at which the enemy should follow the player
-    const followSpeed = 5;
-    //console.log(this.position.z);
-    // Update the enemy's position to move towards the player
-    this.position.add(direction.clone().multiplyScalar(followSpeed));
+    this.loadModel();
   }
 
   loadModel() {
-    const loader = new GLTFLoader();
+      const loader = new GLTFLoader();
+      //passing the animated model into the loader
+      loader.load('../enemy/enemy-running.gltf', (gltf) => {
+        this.model = gltf.scene; // setting the model to the gltf argument
+        this.model.scale.setScalar(this.scale); //setting the scale of the model (from spawner)
+        this.model.position.copy(this.position); //setting the position of the model (from spawner)
+        this.scene.add(this.model); // finally adding to the scene
 
-    loader.load('../enemy/enemy-running.gltf', (gltf) => {
-      this.model = gltf.scene;
-
-      // Set the scale of the model
-      this.model.scale.setScalar(this.scale);
-
-      // Set the position of the model
-      this.model.position.copy(this.position);
-
-      //console.log(this.model);
-      // Add the model to the scene
-      this.scene.add(this.model);
-
-      // Check for animations in the loaded model
-      if (gltf.animations && gltf.animations.length > 0) {
-        this.mixer = new THREE.AnimationMixer(this.model);
-
-        // Add all animations to the mixer
-        gltf.animations.forEach((clip) => {
-          this.mixer.clipAction(clip).play();
-        });
-      }
+        if (gltf.animations && gltf.animations.length > 0) { //check the frames of the file are greater than 0
+          this.mixer = new THREE.AnimationMixer(this.model); // create a new mixer
+          gltf.animations.forEach((clip) => { 
+            this.mixer.clipAction(clip).play();// go through each clip in sequence to animate 
+          });
+        }
     });
   }
+  followPlayer()
+  {
+    if (!this.model || !this.player) {
+      return;
+    }
+    const speed = Math.random() * (0.8 - 0.2) + 0.2;
+    // Calculate the direction vector from the enemy to the player
+    const direction = new THREE.Vector3();
+    direction.subVectors(this.player.Position, this.model.position).normalize();
+
+    // Calculate the Y-axis rotation angle
+    const angle = Math.atan2(direction.x, direction.z);
+
+    // Update the enemy's rotation
+    this.model.rotation.y = angle;
+
+    // Calculate the forward direction vector based on the updated rotation
+    this.forwardDirection.set(0, 0, 1); // Reset to the initial forward direction
+    this.forwardDirection.applyAxisAngle(new THREE.Vector3(0, 1, 0), angle); // calculate that direction based on its new rotation
+
+    // Update the enemy's position to approach the player
+    this.model.position.add(this.forwardDirection.clone().multiplyScalar(speed));
+  }
+  
+  lookAtPlayer(){
+    if(!this.model)
+    {
+      return;
+    }
+    // Calculate the direction vector from the enemy to the player
+    const direction = new THREE.Vector3();
+    direction.subVectors(this.player.Position, this.model.position).normalize();
+
+    const angle = Math.atan2(direction.x, direction.z);
+
+    this.model.rotation.y = angle;
+  }
+  
   update(deltaTime) {
     if (this.mixer) {
       //using time to update the animation frames
       this.mixer.update(deltaTime);
+    }
+    if(this.model)
+    {
+    this.lookAtPlayer();
+    this.followPlayer();
+    }
+  }
+}
+
+//enemy spawner
+class EnemySpawner {
+  constructor(scene, player) {
+    this.init(scene, player);
+  }
+  init(scene, player)
+  {
+    this.scene = scene;
+    this.enemies = [];
+    this.spawnTimer = 0;
+    this.spawnInterval = 500;
+    this.player = player;
+    this.countdown = 1000;
+  }
+
+  spawn() {
+    this.spawnTimer += 1;
+
+    if (this.countdown > 0) {
+      // Still in the countdown phase
+      this.countdown -= 1;
+    }
+    else if (this.spawnTimer >= this.spawnInterval) {
+      this.spawnTimer = 0;
+
+      const enemy = new Enemy(this.scene, new THREE.Vector3(), 20, this.player);
+      enemy.position.x = Math.random() * 500 - 250;
+      enemy.position.z = Math.random() * 500 - 250;
+      enemy.position = new THREE.Vector3(enemy.position.x, -8, enemy.position.z);
+
+      this.enemies.push(enemy);
+      console.log(this.spawnInterval);
+      if (this.spawnInterval > 100) {
+        // Gradually reduce the spawn interval
+        this.spawnInterval *= 0.95;
+      }
+    }
+  }
+
+  update(deltaTime) {
+    this.spawn();
+    for (const enemy of this.enemies) {
+      enemy.update(deltaTime);
     }
   }
 }
@@ -448,21 +645,18 @@ class LoadGame {
   }
 
   init() {
-    this.textPosition = new THREE.Vector3();
+    // Create a new scene
+    this.scene = new THREE.Scene();
+    
     // Create a new renderer for the world with specific parameters
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.setPixelRatio(window.devicePixelRatio);
-    this.renderer.setClearColor(0x91fff8);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    
+    this.renderer.setPixelRatio(window.devicePixelRatio);
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.setClearColor(0x91fff8);
+
     // Add the renderer to the HTML body
     document.body.appendChild(this.renderer.domElement);
-    
-    this.followtxt = document.getElementById('follow_player');
-    document.getElementById('follow_player').textContent = `Paper: ${this.ammunition}`;
-    document.getElementById('Score').textContent = `Score: ${this.score}`;
-    this.canvas = document.querySelector('canvas');
 
     // Add an event listener for window resize
     window.addEventListener('resize', () => { this.WindowResponse(); }, false);
@@ -471,8 +665,6 @@ class LoadGame {
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
     this.camera.position.set(0, 100, 500);
 
-    // Create a new scene
-    this.scene = new THREE.Scene();
 
     // Add directional light to the scene
     let light = new THREE.DirectionalLight(0xffffff, 1);
@@ -505,7 +697,6 @@ class LoadGame {
     this.scene.add(plane);
 
     // Create an instance of the WallBuilder class // collapsed in the braces
-    {
     this.wallBuilder = new WallManager(this.scene);
 
     //the orientations and sizes of the walls
@@ -527,12 +718,12 @@ class LoadGame {
     this.wallBuilder.createWall(wallGeometryX, initialPositionX, numberOfwalls, offset, 'z', 2000);
     this.wallBuilder.createWall(wallGeometryX, initialPositionXL, numberOfwalls, offset, 'z', 4000);
     this.wallBuilder.createWall(wallGeometryZ, initialPositionZL, numberOfwalls, offset, 'x', 3000);
-    }
     
    this.previousAnim = null;
     // Load a 3D model
-    this.loadAnimatedModel();
     this.loadAudio();
+    this.loadAnimatedModel();
+    //this.pointMats();
     this.animate();
   }
 
@@ -543,12 +734,18 @@ class LoadGame {
     this.audioLoader = new THREE.AudioLoader();
 
     const backgroundSound = new THREE.Audio(this.listener);
-
     this.audioLoader.load('../sounds/Background_music_paper.mp3', (buffer) => {
-      backgroundSound.setBuffer(buffer); // Use 'backgroundSound' here
+      backgroundSound.setBuffer(buffer);
       backgroundSound.setLoop(true);
-      backgroundSound.setVolume(0.2);
-      //backgroundSound.play();
+      backgroundSound.setVolume(0.1);
+      backgroundSound.play();
+    });
+
+    this.deathSound = new THREE.Audio(this.listener);
+    this.audioLoader.load('../sounds/death-sfx.mp3', (buffer) => {
+    this.deathSound.setBuffer(buffer);
+    this.deathSound.setLoop(false);
+    this.deathSound.setVolume(1);
     });
   }
 
@@ -556,18 +753,19 @@ class LoadGame {
     const params = {
       camera: this.camera,
       scene: this.scene,
+      spawner: this.spawner,
     }
+    //add player instance
+    this.player = new CharacterController(params);
     
-    this.controls = new CharacterController(params);
-    
-    //enemy model test
-    const enemyPosition = new THREE.Vector3(50, -8, 0);
-    this.model = new Enemy(this.scene, enemyPosition, 20, this.controls);
+    //enemy spawner
+    this.spawner = new EnemySpawner(this.scene, this.player);
     
     //third person camera instance
-    this.thirdPersonCamera = new ThirdPersonCamera({ camera: this.camera, target: this.controls });
+    this.thirdPersonCamera = new ThirdPersonCamera({ camera: this.camera, target: this.player });
 
-    this.rayCast = new RaycastCollision(this.controls, this.wallBuilder);
+    //check raycast for the player detection
+    this.rayCast = new RaycastCollision(this.player, this.wallBuilder, this.spawner, this.deathSound);
   }
 
   // Update the camera and renderer size when the window is resized
@@ -583,24 +781,13 @@ class LoadGame {
       if (this.previousAnim === null) {
         this.previousAnim = t;
       }
-      if (this.controls) {
-        this.controls.score++;
-        this.textPosition.copy(this.controls.Position);
-        this.textPosition.project(this.camera);
-        let widthHalf = this.canvas.width / 2;
-        let heightHalf = this.canvas.height / 2;
-        const rect = this.canvas.getBoundingClientRect();
-        this.textPosition.x = rect.left + (this.textPosition.x * widthHalf) + widthHalf;
-        this.textPosition.y = rect.top - (this.textPosition.y * heightHalf) + heightHalf;
-
-        this.followtxt.style.top = `${this.textPosition.y}px`;
-        this.followtxt.style.left = `${this.textPosition.x}px`; 
-        document.getElementById('Score').textContent = `Score: ${Math.floor(this.controls.score * 0.01)}`;
-         document.getElementById('follow_player').textContent = `Paper: ${this.controls.ammunition}`;
-        
+      if (this.player) {
+        this.player.score++; 
+        //update ammuniton and score
+        document.getElementById('Score').textContent = `Score: ${Math.floor(this.player.score * 0.01)}`;
+        document.getElementById('follow_player').textContent = `Paper: ${this.player.ammunition}`;
       }
       this.animate();
-      this.model.followPlayer();
       this.renderer.render(this.scene, this.camera);
       this.wallBuilder.update();
       this.step(t - this.previousAnim);
@@ -614,16 +801,17 @@ class LoadGame {
   step(timeElapsed) {
     const timeElapsedSec = timeElapsed * 0.001;
 
-    if (this.controls) {
-      this.controls.update(timeElapsedSec);
+    if (this.player) {
+      this.player.update(timeElapsedSec);
+      this.spawner.update(timeElapsedSec);
     }
     this.thirdPersonCamera.update(timeElapsedSec);
-    this.model.update(timeElapsedSec);
   }
 }
 
 let APP = null
 window.addEventListener('DOMContentLoaded', () => { APP = new LoadGame(); });
+
 
 //Assetes Credits below
 

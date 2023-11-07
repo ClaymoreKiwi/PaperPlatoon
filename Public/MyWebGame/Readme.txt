@@ -9,8 +9,9 @@ W = Forward
 S = Backward
 A = rotate left
 D = rotate right
+Left Shift = Sprint / speed up
 
-space will be used to throw paper balls at the enemy to kill them and help the player survive.
+space = will be used to throw paper balls at the enemy to kill them and help the player survive.
 
 Enemies follow the player and, Players will die when they get caught by the enemies and the score will be saved as thier high score.
 
@@ -46,4 +47,3 @@ file structure is as follows:
     -all background music and SFX go here
     
 index
-ReadMe
