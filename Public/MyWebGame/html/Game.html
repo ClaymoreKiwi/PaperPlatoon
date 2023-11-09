@@ -18,6 +18,10 @@
 
 <body onload="timeOut()" style="margin: 1;" id="paper">
   <div id="loader"></div>
+  
+  <div id="loading">
+    <h2>Generating paper world</h2>
+  </div>
   <div style="display: none;" id="myDiv" class="animate-bottom">
     <h1 align="center">Paper Platoon</h1>
     <p style='font-size: 23px'>
@@ -45,6 +49,7 @@
     function showPage() {
       document.getElementById("loader").style.display = "none";
       document.getElementById("myDiv").style.display = "block";
+      document.getElementById("loading").style.display = "none";
     }
   </script>
 </body>

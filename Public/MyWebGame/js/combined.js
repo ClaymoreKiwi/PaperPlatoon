@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
+//character controller and updates for the character
 class CharacterController {
   constructor(params) {
     this.init(params);
@@ -17,10 +18,11 @@ class CharacterController {
     this.isFiring = false;
     this.score = 0;
     this.input = new CharacterControllerInput();
-
+    this.bullets = [];
     this.LoadModels();
   }
 
+  //load the model for the player
   LoadModels() {
     const loader = new GLTFLoader();
     loader.load('../Models/character.gltf', (gltf) => {
@@ -32,16 +34,18 @@ class CharacterController {
           c.castShadow = true;
         }
       });
-
+      //set target to the model so it makes more sense further down the code
       this.target = this.model;
       this.params.scene.add(this.target);
     });
   }
 
+  //return the position of the player
   get Position() {
     return this.position;
   }
 
+  //return the rotation of the player. if not set return a new rotation
   get Rotation() {
     if (!this.target) {
       return new THREE.Quaternion();
@@ -49,32 +53,33 @@ class CharacterController {
     return this.target.quaternion;
   }
 
+  //return a normalised direction based on velocity
   get Direction() {
     return this.velocity.clone().normalize();
   }
 
-
   shoot(){
+    //shoot based on ammunition and a short delay between shots
       if (this.ammunition > 0 && !this.isFiring) {
         this.ammunition -= 1;
         this.isFiring = true;
-
-        const bullet = new Bullet(this.params.scene, this.target);
-        bullet.shoot();
-        this.bullet = bullet;
+        //create new bullet
+        this.bullet = new Bullet(this.params.scene, this.target);
+        this.bullet.shoot();
+        //add to array for updating
+        this.bullets.push(this.bullet);
         // Set a timeout to reset the firing state after a delay
         setTimeout(() => {
           this.isFiring = false;
-        }, 400);
+        }, 800);
       }
   }
-
+//player update method
   update(timeInSeconds) {
     if (!this.target) {
       return;
     }
-
-   // document.addEventListener('mousedown', function() { this.ammunition--; });
+    //set the velocity and deceleration of the player
     const velocity = this.velocity;
     const frameDeceleration = new THREE.Vector3(
       velocity.x * this.slowDown.x,
@@ -82,53 +87,54 @@ class CharacterController {
       velocity.z * this.slowDown.z
     );
 
+    //deceleration is based over time
     frameDeceleration.multiplyScalar(timeInSeconds);
+    //apply deceleration on the forward vector
     frameDeceleration.z = Math.sign(frameDeceleration.z) * Math.min(Math.abs(frameDeceleration.z), Math.abs(velocity.z));
-    frameDeceleration.x = Math.sign(frameDeceleration.x) * Math.min(Math.abs(frameDeceleration.x), Math.abs(velocity.x));
 
     velocity.add(frameDeceleration);
 
+    //create a control variable that 
     const controlObject = this.target;
     const Q = new THREE.Quaternion();
     const A = new THREE.Vector3();
     const R = controlObject.quaternion.clone();
 
     const acc = this.acceleration.clone();
+    //make speed faster
     if (this.input.keys.shift) {
       acc.multiplyScalar(2.0);
     }
+    //move forward
     if (this.input.keys.forward) {
       velocity.z += acc.z * 4 * timeInSeconds;
     }
+    //move backwards
     if (this.input.keys.backward) {
       velocity.z -= acc.z * 4 * timeInSeconds;
     }
+    //rotate left
     if (this.input.keys.left) {
-      //velocity.x += acc.x * 6 * timeInSeconds;
       A.set(0, 1, 0);
       Q.setFromAxisAngle(A, 4.0 * Math.PI * timeInSeconds * this.acceleration.y);
       R.multiply(Q);
     }
+    //rotate right
     if (this.input.keys.right) {
-      //velocity.x -= acc.x * 6 * timeInSeconds;
       A.set(0, 1, 0);
       Q.setFromAxisAngle(A, 4.0 * -Math.PI * timeInSeconds * this.acceleration.y);
       R.multiply(Q);
     }
-
+    //shoot
     if (this.input.keys.space) {
       this.shoot();
     }
-    if(this.bullet)
-    {
-      this.bullet.update(timeInSeconds);
+    //update each bullet in the array
+    for (const bullet of this.bullets) {
+      bullet.update(timeInSeconds);
     }
-  
     //set the new position of the character after copying R
     controlObject.quaternion.copy(R);
-
-    const oldPosition = new THREE.Vector3();
-    oldPosition.copy(controlObject.position);
 
     //set the direction of the forward movement 
     const forward = new THREE.Vector3(0, 0, 1);
@@ -141,63 +147,136 @@ class CharacterController {
     //apply a rotation using quaternion so that the movement is aligned with the sideways vector
     sideways.applyQuaternion(controlObject.quaternion);
     sideways.normalize();
-
+    //update speed
     forward.multiplyScalar(velocity.z * timeInSeconds);
     sideways.multiplyScalar(velocity.x * timeInSeconds);
 
+    //set position based on speed
     controlObject.position.add(forward);
     controlObject.position.add(sideways);
-
+    
     this.position.copy(controlObject.position);
-
+    //to update animations (they dont exist right now)
     if (this.mixer) {
       this.mixer.update(timeInSeconds);
     }
   }
 }
 
+//creation of the bullets 
 class Bullet {
   constructor(scene, player) {
     this.scene = scene;
     this.player = player;
-    this.bullets = [];
   }
 
   shoot() {
     // Create a new bullet
     const geometry = new THREE.SphereGeometry(2, 32, 32);
     const material = new THREE.MeshStandardMaterial({ color: 0xAAAAAA });
-    const bullet = new THREE.Mesh(geometry, material);
+    this.bullet = new THREE.Mesh(geometry, material);
 
     // Set the initial position and direction
-    bullet.position.copy(this.player.position).add(new THREE.Vector3(0,10,0));
+   this.bullet.position.copy(this.player.position).add(new THREE.Vector3(0,10,0));
 
-    // Ensure the player has a valid rotation quaternion
+    //validate rotation quaternion
     if (this.player.rotation) {
       const direction = new THREE.Vector3(0, 0, 1);
       direction.applyQuaternion(this.player.quaternion);
-
       //set the velocity
-      bullet.velocity = direction.clone().multiplyScalar(20);
-    } else {
-      console.warn('Player rotation is not valid.');
-      bullet.velocity = new THREE.Vector3(0, 0, 1);
+      this.bullet.velocity = direction.clone().multiplyScalar(100);
+    } 
+    else {
+      this.bullet.velocity = new THREE.Vector3(0, 0, 1);
     }
 
     // Add the bullet to the scene
-    this.scene.add(bullet);
-
-    // Store the bullet for later updates
-    this.bullets.push(bullet);
+    this.scene.add(this.bullet);
   }
 
-  update(timeInSeconds) {
-    for (const bullet of this.bullets) {
-      // Update the bullet's position
-      bullet.position.add(bullet.velocity.clone().multiplyScalar(timeInSeconds));
-    }
+  update(deltaTime) {
+      this.bullet.position.add(this.bullet.velocity.clone().multiplyScalar(deltaTime));
   }
 }
+
+//ammo collection
+class PlusAmmo {
+    constructor(scene) {
+      this.scene = scene;
+      this.group = new THREE.Group(); // grouped object for the ammo
+      this.particleSystem = this.createParticleSystem();
+      this.rotationSpeed = 1;
+      this.spawnTimer = 0;
+      this.spawnInterval = 500;
+      this.ammoList = []
+
+      this.init();
+
+      //remove ammo after 10 seconds
+      setTimeout(() => {
+        if(this.group){
+          this.scene.remove(this.group);
+        }
+      }, 10000);
+    }
+
+    //create some particles around the ammo
+    createParticleSystem() {
+      const widthSegments = 8;
+      const heightSegments = 8;
+      const sphereGeometry = new THREE.SphereGeometry(5, widthSegments, heightSegments);
+      const pointsMaterial = new THREE.PointsMaterial({ color: 'green', size: 0.5 });
+      //add to group
+      const points = new THREE.Points(sphereGeometry, pointsMaterial);
+      this.group.add(points);
+
+      return points;
+    }
+
+    //cubes added to to group for the item
+    init() {
+      //add geometry for the pluse symbol
+      const geometry = new THREE.BoxGeometry(1, 4, 1);
+      const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+      const cube = new THREE.Mesh(geometry, material);
+      cube.position.set(0, 0, 0);
+      this.group.add(cube);
+
+      //second geometry for the plus symbol
+      const geometry2 = new THREE.BoxGeometry(1, 1, 4);
+      const cube2 = new THREE.Mesh(geometry2, material);
+      cube2.position.set(0, 0, 0);
+      this.group.add(cube2);
+    }
+
+  //spawning similar to the enemy based on a timer and using the same ranges
+  spawn() {
+    this.spawnTimer += 1;
+    if (this.spawnTimer >= this.spawnInterval) {
+      this.spawnTimer = 0;
+      // Create a new ammo instance and add it to the group
+      const ammo = new PlusAmmo(this.scene);
+      ammo.group.position.x = Math.random() * 500 - 250;
+      ammo.group.position.z = Math.random() * 500 - 250;
+
+      // Add the new ammo group to the list
+      this.ammoList.push(ammo);
+      // Add the entire group to the scene
+      this.scene.add(ammo.group);
+    }
+  }
+    //update the ammo
+    update(deltaTime) {
+      this.spawn();
+      // Rotate the entire group
+      this.group.rotation.x += this.rotationSpeed * deltaTime;
+      this.group.rotation.y += this.rotationSpeed * deltaTime;
+      //update all the ammo in the list
+      this.ammoList.forEach(ammo => {
+        ammo.update(deltaTime);
+      });
+    }
+  }
 
 //has all the flags for the directional movement
 class CharacterControllerInput {
@@ -435,9 +514,10 @@ class WallManager {
 
 //raycast collisions for the walls and the player
 class RaycastCollision {
-  constructor(player, wallManager, enemies, sound) {
+  constructor(player, wallManager, ammoItems, enemies, sound) {
     this.player = player;
     this.wallManager = wallManager;
+    this.ammoItems = ammoItems;
     this.raycaster = new THREE.Raycaster(undefined, undefined, 0, 10);
     this.direction = player.Direction;
     this.spawner = enemies;
@@ -475,6 +555,8 @@ class RaycastCollision {
     }
     catch{/*console.log("waiting for model layer to load");*/}
 
+    const ammoIntersections = this.raycaster.intersectObjects(this.ammoItems.ammoList.map(ammo => ammo.group), true);
+
     if (wallIntersections.length > 0) {
       //console.log("Raycast Hit");
       if (this.player.velocity.z > 0) {
@@ -488,25 +570,59 @@ class RaycastCollision {
     }
     if (this.enemyIntersections.length > 0) {
       this.sound.play();
+      document.cookie = this.player.score; // store the score as a cookie before restarting
       location.reload(); // place holder for death of the player
+    }
+    if (ammoIntersections.length > 0) {
+      // Handle ammo collisions
+      
+      this.player.ammunition += 5;
+      console.log("ammo pickup");
     }
   }
 }
 
 //particle system
-class partilceSystem{
-  constructor(){
-    
-  }
-  init(){
-  const radius = 7;
-  const widthSegments = 12;
-  const heightSegments = 8;
-  const geom = new THREE.SphereGeometry(radius, widthSegments, heightSegments);
-  const mats = new THREE.PointsMaterial({color: 'red', size: 0.5});
+class ParticleSystem {
+  constructor(scene) {
+    this.scene = scene;
+    this.radius = 1;
+    this.expansionSpeed = 5;
+    this.maxRadius = 200;
+    this.particleSize = 0.5;
 
-  const points = new THREE.Points(geom, mats);
-  this.scene.add(points);
+    this.init();
+  }
+
+  init() {
+    const widthSegments = 15;
+    const heightSegments = 15;
+    const sphereGeometry = new THREE.SphereGeometry(this.radius, widthSegments, heightSegments);
+    const pointsMaterial = new THREE.PointsMaterial({ color: 'red', size: this.particleSize });
+
+    this.points = new THREE.Points(sphereGeometry, pointsMaterial);
+    this.scene.add(this.points);
+  }
+
+  update(deltaTime) {
+    // Increase the radius based on the expansion speed
+    this.radius += this.expansionSpeed * deltaTime;
+
+    // Adjust particle size based on the current radius
+    this.particleSize = Math.min(0.5, this.radius / 10);
+
+    // Update the particle material's size
+    this.points.material.size = this.particleSize;
+
+    // Update the particle system's geometry to match the new radius
+    if (this.radius <= this.maxRadius) {
+      const geometry = new THREE.SphereGeometry(this.radius, 12, 8);
+      this.points.geometry.dispose(); // remove old geometry
+      this.points.geometry = geometry;
+    } else {
+      // If it reaches the maximum radius, remove the particle system from the scene
+      this.scene.remove(this.points);
+    }
   }
 }
 
@@ -577,7 +693,7 @@ class Enemy {
 
     this.model.rotation.y = angle;
   }
-  
+
   update(deltaTime) {
     if (this.mixer) {
       //using time to update the animation frames
@@ -603,7 +719,7 @@ class EnemySpawner {
     this.spawnTimer = 0;
     this.spawnInterval = 500;
     this.player = player;
-    this.countdown = 1000;
+    this.countdown = 500;
   }
 
   spawn() {
@@ -613,16 +729,16 @@ class EnemySpawner {
       // Still in the countdown phase
       this.countdown -= 1;
     }
+      //
     else if (this.spawnTimer >= this.spawnInterval) {
       this.spawnTimer = 0;
-
+      //create new enemy and set its position
       const enemy = new Enemy(this.scene, new THREE.Vector3(), 20, this.player);
       enemy.position.x = Math.random() * 500 - 250;
       enemy.position.z = Math.random() * 500 - 250;
       enemy.position = new THREE.Vector3(enemy.position.x, -8, enemy.position.z);
-
+      //add enemies to list
       this.enemies.push(enemy);
-      console.log(this.spawnInterval);
       if (this.spawnInterval > 100) {
         // Gradually reduce the spawn interval
         this.spawnInterval *= 0.95;
@@ -647,7 +763,6 @@ class LoadGame {
   init() {
     // Create a new scene
     this.scene = new THREE.Scene();
-    
     // Create a new renderer for the world with specific parameters
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -665,7 +780,6 @@ class LoadGame {
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
     this.camera.position.set(0, 100, 500);
 
-
     // Add directional light to the scene
     let light = new THREE.DirectionalLight(0xffffff, 1);
     light.position.set(20, 100, 10);
@@ -681,9 +795,9 @@ class LoadGame {
     const texture = new THREE.TextureLoader().load('../images/paper.jpg');
     const skyboxGeometry = new THREE.SphereGeometry(1000, 200, 50);
     const skyboxMaterial = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
-    this.sky = new THREE.Mesh(skyboxGeometry, skyboxMaterial);
-    this.sky.position.set(0, 50, 0);
-    this.scene.add(this.sky);
+    const sky = new THREE.Mesh(skyboxGeometry, skyboxMaterial);
+    sky.position.set(0, 50, 0);
+    this.scene.add(sky);
 
     // Add a plane to the scene
     const paperb = new THREE.TextureLoader().load('../images/paperborder.png');
@@ -735,17 +849,20 @@ class LoadGame {
 
     const backgroundSound = new THREE.Audio(this.listener);
     this.audioLoader.load('../sounds/Background_music_paper.mp3', (buffer) => {
+      const delay = 3000;
+      setTimeout(() => {
       backgroundSound.setBuffer(buffer);
       backgroundSound.setLoop(true);
       backgroundSound.setVolume(0.1);
       backgroundSound.play();
+      }, delay);
     });
 
     this.deathSound = new THREE.Audio(this.listener);
     this.audioLoader.load('../sounds/death-sfx.mp3', (buffer) => {
-    this.deathSound.setBuffer(buffer);
-    this.deathSound.setLoop(false);
-    this.deathSound.setVolume(1);
+      this.deathSound.setBuffer(buffer);
+      this.deathSound.setLoop(false);
+      this.deathSound.setVolume(1);
     });
   }
 
@@ -757,15 +874,15 @@ class LoadGame {
     }
     //add player instance
     this.player = new CharacterController(params);
+    this.plusAmmo = new PlusAmmo(this.scene);
     
     //enemy spawner
-    this.spawner = new EnemySpawner(this.scene, this.player);
-    
+    this.spawner = new EnemySpawner(this.scene, this.player);    
     //third person camera instance
     this.thirdPersonCamera = new ThirdPersonCamera({ camera: this.camera, target: this.player });
 
     //check raycast for the player detection
-    this.rayCast = new RaycastCollision(this.player, this.wallBuilder, this.spawner, this.deathSound);
+    this.rayCast = new RaycastCollision(this.player, this.wallBuilder,this.plusAmmo, this.spawner, this.deathSound);
   }
 
   // Update the camera and renderer size when the window is resized
@@ -775,7 +892,7 @@ class LoadGame {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
   }
 
-  // Animate the scene
+  // Animate the scene FPS update
   animate() {
     requestAnimationFrame((t) => {
       if (this.previousAnim === null) {
@@ -787,17 +904,17 @@ class LoadGame {
         document.getElementById('Score').textContent = `Score: ${Math.floor(this.player.score * 0.01)}`;
         document.getElementById('follow_player').textContent = `Paper: ${this.player.ammunition}`;
       }
-      this.animate();
       this.renderer.render(this.scene, this.camera);
       this.wallBuilder.update();
       this.step(t - this.previousAnim);
       this.previousAnim = t;
       this.rayCast.checkCollision();
+      this.animate();
     });
 
   }
 
-  // Step the animation
+  // Step the animation per second 
   step(timeElapsed) {
     const timeElapsedSec = timeElapsed * 0.001;
 
@@ -805,15 +922,15 @@ class LoadGame {
       this.player.update(timeElapsedSec);
       this.spawner.update(timeElapsedSec);
     }
+    this.plusAmmo.update(timeElapsedSec);
     this.thirdPersonCamera.update(timeElapsedSec);
   }
 }
 
-let APP = null
-window.addEventListener('DOMContentLoaded', () => { APP = new LoadGame(); });
-
+//define the game
+let Game = null
+window.addEventListener('DOMContentLoaded', () => { Game = new LoadGame(); });
 
 //Assetes Credits below
-
 
 //Credit "paper_ball.gltf" - >>This work is based on "Paper Low" (https://sketchfab.com/3d-models/paper-low-bab9b0a4a3194165be4ac939c565d39f) by bargin_bill_bradly (https://sketchfab.com/bargin_bill_bradly) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
