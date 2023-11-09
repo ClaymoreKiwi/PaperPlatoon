@@ -1,3 +1,7 @@
+
+link: https://mywebgame--claymorekiwi.repl.co/html/Game.html - continued progress
+github link : https://github.com/ClaymoreKiwi/PaperPlatoon
+
 Paper Platoon
 This game is a simple survival game where the player gains points for surviving for longer and longer periods of time.
 --------------------------------------------------------------------------------------------------------------------------
