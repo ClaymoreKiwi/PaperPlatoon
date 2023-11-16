@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html>
-
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width">
   <title>Bryce's Game</title>
-  <link href="../css/style.css" rel="stylesheet" type="text/css" />
+  <link href="../css/game.css" rel="stylesheet" type="text/css" />
 
   <script type="importmap">
   {
@@ -17,30 +16,40 @@
 </script>
 </head>
 
-<body onload="timeOut()" style="margin: 0;">
-
+<body onload="timeOut()" style="margin: 1;" id="paper">
   <div id="loader"></div>
   
-  <div style="display: none;" id="myDiv" class="animate-bottom">
-    
-    <h1 align="center">welcome to Paper Platoon</h1>
-    <button onclick="window.location.href='../index.html'">back to home</button>
-
-    <div id="follow_player">Paper: 0</div>
-    <div id="Score", align: right>Score: 0</div>
-    <script type="module" src="../js/combined.js"></script>
+  <div id="loading">
+    <h2>Generating paper world</h2>
   </div>
-  
+  <div style="display: none;" id="myDiv" class="animate-bottom">
+    <h1 align="center">Paper Platoon</h1>
+    <p style='font-size: 23px'>
+        <button onclick="window.location.href='../index.html'">back</button>
+    </p>
+    <div id="follow_player">Paper: 0</div>
+    <div id="Score">Score: 0</div>
+    <div id="virtual-container">
+      <div id="shootButton" class="virtual-button">Shoot</div>
+      <div id="sprintButton" class="virtual-button">Sprint</div>
+    </div>
+        <div id="virtual-button-container">
+          <div id="moveForwardButton" class="virtual-button">Forward</div>
+          <div id="moveBackwardButton" class="virtual-button">Backward</div>
+          <div id="turnLeft" class="virtual-button">Left</div>
+          <div id="turnRight" class="virtual-button">Right</div>
+        </div>
+  <script type="module" src="../js/combined.js"></script>
+  </div>
   <script>
     let timeOutNum;
-
     function timeOut() {
       timeOutNum = setTimeout(showPage, 3000);
     };
-
     function showPage() {
       document.getElementById("loader").style.display = "none";
       document.getElementById("myDiv").style.display = "block";
+      document.getElementById("loading").style.display = "none";
     }
   </script>
 </body>
