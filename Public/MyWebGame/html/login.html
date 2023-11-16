@@ -9,17 +9,17 @@
 </head>
 
 <body id="paper">
-  <h1 class="center">Login and Register</h1>
+  <h1 class="center">Register</h1>
   <p>Fill in your user name and password</p>
 
-  <form align="center">
-    <label for="username"><b>Username:</b></label>
-    <input type="text" placeholder="Enter User Name" name="email" id="email" required><br>
-
-    <label for="password"><b>Password:</b></label>
-    <input type="password" placeholder="Enter Password" name="psw" id="psw" required>
+  <form align="center" id='register-Form'>
+    <label for="uname"><b>Username:</b></label>
+    <input type="text" autocomplete="off" placeholder="Enter User Name" name="uname" id="uname" required>
     <br>
-    <button onclick="window.location.href='404.html'">Register</button>
+    <label for="psw"><b>Password:</b></label>
+    <input type="password" autocomplete="off" placeholder="Enter Password" name="psw" id="psw" required>
+    <br>
+    <button type="submit">Register</button>
   </form>
 
   <p>Already have an account? <a href="newuser.html"> Login here</a></p>
@@ -27,7 +27,35 @@
   <p>not interested in an acount? <a href="Game.html"> Go to the game</a></p>
 
   <button onclick="window.location.href='../index.html'">Back to home</button>
-  <script src="script.js"></script>
+  
+  <script>
+    const form = document.getElementById('register-Form');
+    form.addEventListener('submit', registerUser);
+
+    async function registerUser(event) {
+      event.preventDefault();
+      // User name fetched from the input fields
+      const username = form.elements['uname'].value;
+      const password = form.elements['psw'].value;
+
+      // Request made to the server
+      const result = await fetch('/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          username,
+          password
+        })
+      }).then((response) => response.json());
+
+      // Handle the result as needed
+      result.then((data) => {
+        console.log(data);
+      });
+    }
+  </script>
 </body>
 
 </html>
