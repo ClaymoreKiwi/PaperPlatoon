@@ -58,23 +58,31 @@ class CharacterController {
     return this.velocity.clone().normalize();
   }
 
-  shoot(){
+  shoot() {
     //shoot based on ammunition and a short delay between shots
-      if (this.ammunition > 0 && !this.isFiring) {
-        this.ammunition -= 1;
-        this.isFiring = true;
-        //create new bullet
-        this.bullet = new Bullet(this.params.scene, this.target);
-        this.bullet.shoot();
-        //add to array for updating
-        this.bullets.push(this.bullet);
-        // Set a timeout to reset the firing state after a delay
-        setTimeout(() => {
-          this.isFiring = false;
-        }, 800);
-      }
+    if (this.ammunition > 0 && !this.isFiring) {
+      this.ammunition -= 1;
+      this.isFiring = true;
+      //create new bullet
+      this.bullet = new Bullet(this.params.scene, this.target);
+      this.bullet.shoot();
+      //add to array for updating
+      this.bullets.push(this.bullet);
+      // Set a timeout to reset the firing state after a delay
+      setTimeout(() => {
+        this.isFiring = false;
+      }, 800);
+    }
   }
-//player update method
+  //remove bullets from list
+  removeBullet(bullet) {
+    const index = this.bullets.indexOf(bullet);
+    if (index !== -1) {
+      this.bullets.splice(index, 1);
+    }
+  }
+    
+  //player update method
   update(timeInSeconds) {
     if (!this.target) {
       return;
@@ -154,7 +162,7 @@ class CharacterController {
     //set position based on speed
     controlObject.position.add(forward);
     controlObject.position.add(sideways);
-    
+
     this.position.copy(controlObject.position);
     //to update animations (they dont exist right now)
     if (this.mixer) {
@@ -168,6 +176,8 @@ class Bullet {
   constructor(scene, player) {
     this.scene = scene;
     this.player = player;
+    this.position = new THREE.Vector3();
+    this.velocity = new THREE.Vector3();
   }
 
   shoot() {
@@ -177,106 +187,124 @@ class Bullet {
     this.bullet = new THREE.Mesh(geometry, material);
 
     // Set the initial position and direction
-   this.bullet.position.copy(this.player.position).add(new THREE.Vector3(0,10,0));
+    this.bullet.position.copy(this.player.position).add(new THREE.Vector3(0, 10, 0));
 
-    //validate rotation quaternion
+    // Validate rotation quaternion
     if (this.player.rotation) {
       const direction = new THREE.Vector3(0, 0, 1);
       direction.applyQuaternion(this.player.quaternion);
-      //set the velocity
-      this.bullet.velocity = direction.clone().multiplyScalar(100);
-    } 
-    else {
-      this.bullet.velocity = new THREE.Vector3(0, 0, 1);
+      // Set the velocity
+      this.velocity = direction.clone().multiplyScalar(100);
+    } else {
+      this.velocity = new THREE.Vector3(0, 0, 1);
     }
-
     // Add the bullet to the scene
     this.scene.add(this.bullet);
   }
 
   update(deltaTime) {
-      this.bullet.position.add(this.bullet.velocity.clone().multiplyScalar(deltaTime));
+    // Update the position based on the velocity
+    this.bullet.position.add(this.velocity.clone().multiplyScalar(deltaTime));
+    //update the position to the balls current position
+    this.position.copy(this.bullet.position);
   }
 }
 
-//ammo collection
-class PlusAmmo {
-    constructor(scene) {
-      this.scene = scene;
-      this.group = new THREE.Group(); // grouped object for the ammo
-      this.particleSystem = this.createParticleSystem();
-      this.rotationSpeed = 1;
-      this.spawnTimer = 0;
-      this.spawnInterval = 500;
-      this.ammoList = []
+//class to generate a complex grouped pickups
+class AmmoGroup{
+  constructor(scene){
+    this.scene = scene;
+    this.group = new THREE.Group(); // grouped object for the ammo
+    this.group.uuid = THREE.MathUtils.generateUUID();
+    this.particleSystem = this.createParticleSystem();
+    this.rotationSpeed = 1;
+    this.init();
+  }
+  //create some particles around the ammo
+  createParticleSystem() {
+    const widthSegments = 8;
+    const heightSegments = 8;
+    const sphereGeometry = new THREE.SphereGeometry(5, widthSegments, heightSegments);
+    const pointsMaterial = new THREE.PointsMaterial({ color: 'green', size: 0.5 });
+    //add to group
+    const points = new THREE.Points(sphereGeometry, pointsMaterial);
+    this.group.add(points);
 
-      this.init();
+    return points;
+  }
 
-      //remove ammo after 10 seconds
-      setTimeout(() => {
-        if(this.group){
-          this.scene.remove(this.group);
-        }
-      }, 10000);
-    }
+  //cubes added to to group for the item
+  init() {
+    //add geometry for the pluse symbol
+    const geometry = new THREE.BoxGeometry(1, 4, 1);
+    const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+    const cube = new THREE.Mesh(geometry, material);
+    cube.position.set(0, 0, 0);
+    this.group.add(cube);
 
-    //create some particles around the ammo
-    createParticleSystem() {
-      const widthSegments = 8;
-      const heightSegments = 8;
-      const sphereGeometry = new THREE.SphereGeometry(5, widthSegments, heightSegments);
-      const pointsMaterial = new THREE.PointsMaterial({ color: 'green', size: 0.5 });
-      //add to group
-      const points = new THREE.Points(sphereGeometry, pointsMaterial);
-      this.group.add(points);
+    //second geometry for the plus symbol
+    const geometry2 = new THREE.BoxGeometry(1, 1, 4);
+    const cube2 = new THREE.Mesh(geometry2, material);
+    cube2.position.set(0, 0, 0);
+    this.group.add(cube2);
+  }
 
-      return points;
-    }
+  removal() {
+    // Remove the ammo group after 5 seconds
+    setTimeout(() => {
+      this.scene.remove(this.group);
+      AmmoSpawner.removeAmmoFromList(this);
+    }, 5000);
+  }
 
-    //cubes added to to group for the item
-    init() {
-      //add geometry for the pluse symbol
-      const geometry = new THREE.BoxGeometry(1, 4, 1);
-      const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
-      const cube = new THREE.Mesh(geometry, material);
-      cube.position.set(0, 0, 0);
-      this.group.add(cube);
+  update(deltaTime){
+    // Rotate the entire group
+    this.group.rotation.x += this.rotationSpeed * deltaTime;
+    this.group.rotation.y += this.rotationSpeed * deltaTime;
+  }
+}
 
-      //second geometry for the plus symbol
-      const geometry2 = new THREE.BoxGeometry(1, 1, 4);
-      const cube2 = new THREE.Mesh(geometry2, material);
-      cube2.position.set(0, 0, 0);
-      this.group.add(cube2);
-    }
-
+//create instancs of the ammoGroup for the player to pick up
+class AmmoSpawner {
+  //static array to avoid multiple ammo groups being created
+  static ammoList = [];
+  
+  constructor(scene) {
+    this.scene = scene;
+    this.spawnTimer = 0;
+    this.spawnInterval = 500;
+    this.collision = false;
+  }
+  
   //spawning similar to the enemy based on a timer and using the same ranges
   spawn() {
     this.spawnTimer += 1;
     if (this.spawnTimer >= this.spawnInterval) {
       this.spawnTimer = 0;
-      // Create a new ammo instance and add it to the group
-      const ammo = new PlusAmmo(this.scene);
+      const ammo = new AmmoGroup(this.scene);
       ammo.group.position.x = Math.random() * 500 - 250;
       ammo.group.position.z = Math.random() * 500 - 250;
-
-      // Add the new ammo group to the list
-      this.ammoList.push(ammo);
-      // Add the entire group to the scene
+      // Add the new ammo group to the scene
       this.scene.add(ammo.group);
+      // Add the new ammo instance to the list
+      AmmoSpawner.ammoList.push(ammo);
+      ammo.removal();
     }
   }
-    //update the ammo
-    update(deltaTime) {
-      this.spawn();
-      // Rotate the entire group
-      this.group.rotation.x += this.rotationSpeed * deltaTime;
-      this.group.rotation.y += this.rotationSpeed * deltaTime;
-      //update all the ammo in the list
-      this.ammoList.forEach(ammo => {
-        ammo.update(deltaTime);
-      });
-    }
+  //method used to remove the ammo from the list as well as the intanced ammo object class
+  static removeAmmoFromList(ammoInstance) {
+      AmmoSpawner.ammoList = AmmoSpawner.ammoList.filter(ammo => ammo !== ammoInstance);
   }
+  
+  //update the ammo
+  update(deltaTime) {
+    this.spawn();
+    //update all the ammo in the list
+    AmmoSpawner.ammoList.forEach(ammo => {
+      ammo.update(deltaTime);
+    });
+  }
+}
 
 //has all the flags for the directional movement
 class CharacterControllerInput {
@@ -293,12 +321,12 @@ class CharacterControllerInput {
       shift: false,
       space: false
     };
-    
+
     //console.log(this.ammunition);
     document.addEventListener('keydown', (event) => this.onKeyDown(event), false);
     document.addEventListener('keyup', (event) => this.onKeyUp(event), false);
-    document.addEventListener('touchstart',(event) => this.TouchEvent(event), false);
-    document.addEventListener('touchend',(event) => this.TouchEvent(event), false);
+    document.addEventListener('touchstart', (event) => this.TouchEvent(event), false);
+    document.addEventListener('touchend', (event) => this.TouchEvent(event), false);
 
   }
   //set flaggs based on the keystate down
@@ -319,7 +347,7 @@ class CharacterControllerInput {
       case 16: //shift
         this.keys.shift = true;
         break;
-        case 32: //shift
+      case 32: //shift
         this.keys.space = true;
         break;
     }
@@ -342,71 +370,71 @@ class CharacterControllerInput {
       case 16: //shift
         this.keys.shift = false;
         break;
-        case 32: //shift
+      case 32: //shift
         this.keys.space = false;
         break;
     }
   }
-    // Handle touchstart events for virtual buttons
-    TouchEvent() {
-        moveForwardButton.addEventListener('touchstart', () => {
-          // Handle touch start for moving forward
-          this.keys.forward = true;
-        });
+  // Handle touchstart events for virtual buttons
+  TouchEvent() {
+    moveForwardButton.addEventListener('touchstart', () => {
+      // Handle touch start for moving forward
+      this.keys.forward = true;
+    });
 
-        moveForwardButton.addEventListener('touchend', () => {
-          // Handle touch end for moving forward
-            this.keys.forward = false;
-        });
+    moveForwardButton.addEventListener('touchend', () => {
+      // Handle touch end for moving forward
+      this.keys.forward = false;
+    });
 
-        moveBackwardButton.addEventListener('touchstart', () => {
-          // Handle touch start for moving backward
-            this.keys.backward = true;
-        });
+    moveBackwardButton.addEventListener('touchstart', () => {
+      // Handle touch start for moving backward
+      this.keys.backward = true;
+    });
 
-        moveBackwardButton.addEventListener('touchend', () => {
-          // Handle touch end for moving backward
-            this.keys.backward = false;
-        });
-        turnLeft.addEventListener('touchstart', () => {
-          // Handle touch start for Turning Left
-            this.keys.left = true;
-        });
-  
-        turnLeft.addEventListener('touchend', () => {
-          // Handle touch end for turning left
-            this.keys.left = false;
-        });
-        turnRight.addEventListener('touchstart', () => {
-          // Handle touch start for Turning right
-            this.keys.right = true;
-        });
-  
-        turnRight.addEventListener('touchend', () => {
-          // Handle touch end for Turning right
-            this.keys.right = false;
-        });
-        
-        sprintButton.addEventListener('touchstart', () => {
-          // Handle touch start for sprinting
-            this.keys.shift = true;
-        });
-  
-        sprintButton.addEventListener('touchend', () => {
-          // Handle touch end for sprinting
-          this.keys.shift = false;
-        });
-        shootButton.addEventListener('touchstart', () => {
-          // Handle touch start for shooting
-            this.keys.space = true;
-        });
-  
-          shootButton.addEventListener('touchend', () => {
-          // Handle touch end for shooting
-            this.keys.space = false;
-        });
-    }
+    moveBackwardButton.addEventListener('touchend', () => {
+      // Handle touch end for moving backward
+      this.keys.backward = false;
+    });
+    turnLeft.addEventListener('touchstart', () => {
+      // Handle touch start for Turning Left
+      this.keys.left = true;
+    });
+
+    turnLeft.addEventListener('touchend', () => {
+      // Handle touch end for turning left
+      this.keys.left = false;
+    });
+    turnRight.addEventListener('touchstart', () => {
+      // Handle touch start for Turning right
+      this.keys.right = true;
+    });
+
+    turnRight.addEventListener('touchend', () => {
+      // Handle touch end for Turning right
+      this.keys.right = false;
+    });
+
+    sprintButton.addEventListener('touchstart', () => {
+      // Handle touch start for sprinting
+      this.keys.shift = true;
+    });
+
+    sprintButton.addEventListener('touchend', () => {
+      // Handle touch end for sprinting
+      this.keys.shift = false;
+    });
+    shootButton.addEventListener('touchstart', () => {
+      // Handle touch start for shooting
+      this.keys.space = true;
+    });
+
+    shootButton.addEventListener('touchend', () => {
+      // Handle touch end for shooting
+      this.keys.space = false;
+    });
   }
+}
 
 //camera positioning to the player
 class ThirdPersonCamera {
@@ -512,18 +540,57 @@ class WallManager {
   }
 }
 
+//instanced mesh for the visual obstacle for the player
+class VisualObstacle{
+  constructor(scene){
+    this.scene = scene;
+    this.init();
+  }
+  init() {
+    const geometry = new THREE.SphereGeometry(50, 100, 100);
+    const material = new THREE.MeshStandardMaterial({ color: 0x518d9c, transparent: true, opacity: 0.9  });
+    const count = 10;
+
+    // Create an InstancedMesh
+    this.smoke = new THREE.InstancedMesh(geometry, material, count);
+
+    //set the position, rotation, and scale of each instance
+    const matrix = new THREE.Matrix4();
+
+    //random location
+    for (let i = 0; i < count; i++) {
+      const spread = 500;
+      matrix.setPosition(
+        Math.random() * spread - spread / 2,
+        0,
+        Math.random() * spread - spread / 2
+      );
+
+      this.smoke.setMatrixAt(i, matrix);
+    }
+
+    //add Instanced Mesh to the scene
+    this.scene.add(this.smoke);
+  }
+}
+
 //raycast collisions for the walls and the player
 class RaycastCollision {
-  constructor(player, wallManager, ammoItems, enemies, sound) {
+  constructor(scene,player, wallManager, ammoItems, enemies, sound, gameOver) {
+    this.scene = scene;
     this.player = player;
     this.wallManager = wallManager;
     this.ammoItems = ammoItems;
     this.raycaster = new THREE.Raycaster(undefined, undefined, 0, 10);
+    this.bulletRaycaster = new THREE.Raycaster(undefined, undefined, 0, 5);
     this.direction = player.Direction;
     this.spawner = enemies;
     this.sound = sound;
+    this.gameOver = gameOver;
+    this.pfx = null;
   }
 
+  //raycast for player
   checkCollision() {
     // Create a direction vector pointing along the local Z-axis
     const localDirection = new THREE.Vector3(0, 0, 1);
@@ -550,12 +617,9 @@ class RaycastCollision {
     // Check for intersections with objects in the scene
     const wallIntersections = this.raycaster.intersectObjects(this.wallManager.walls, true);
     //the models are loaded asynchronosly so we catch the error while the model is still loading
-    try{ 
     this.enemyIntersections = this.raycaster.intersectObjects(this.spawner.enemies.map(enemy => enemy.model), true);
-    }
-    catch{/*console.log("waiting for model layer to load");*/}
 
-    const ammoIntersections = this.raycaster.intersectObjects(this.ammoItems.ammoList.map(ammo => ammo.group), true);
+    const ammoIntersections = this.raycaster.intersectObjects(AmmoSpawner.ammoList.map(ammo => ammo.group), true);
 
     if (wallIntersections.length > 0) {
       //console.log("Raycast Hit");
@@ -570,26 +634,76 @@ class RaycastCollision {
     }
     if (this.enemyIntersections.length > 0) {
       this.sound.play();
-      document.cookie = this.player.score; // store the score as a cookie before restarting
-      location.reload(); // place holder for death of the player
+      this.gameOver.setGameOver();
     }
     if (ammoIntersections.length > 0) {
-      // Handle ammo collisions
-      
-      this.player.ammunition += 5;
-      console.log("ammo pickup");
+      for (let i = 0; i < ammoIntersections.length; i++) {
+        const intersection = ammoIntersections[i];
+        const intersectedAmmo = AmmoSpawner.ammoList.find(ammo => {
+          return ammo.group.uuid !== intersection.object.uuid; // Compare UUIDs
+        });
+        if (intersectedAmmo) {
+          // Handle ammo pickup
+          this.player.ammunition += 5;
+          this.player.score += 100;
+          AmmoSpawner.removeAmmoFromList(intersectedAmmo); //remove ammo from intersect list (cannot be interacted with)
+          this.scene.remove(intersectedAmmo.group) // remove mesh from scene
+        }
+      }
+    }
+  }
+
+  //raycast for bullets
+  checkBulletCollision() {
+    for (const bullet of this.player.bullets) {
+      // Set the bullet ray's origin and direction based on the bullet's position and velocity
+      this.bulletRaycaster.ray.origin.copy(bullet.position);
+      this.bulletRaycaster.ray.direction.copy(bullet.velocity).normalize();
+
+      // Check for intersections with objects in the scene
+      const wallIntersections = this.bulletRaycaster.intersectObjects(this.wallManager.walls, true);
+      const enemyIntersections = this.bulletRaycaster.intersectObjects(this.spawner.enemies.map(enemy => enemy.model), true);
+
+        if (wallIntersections.length > 0 || enemyIntersections.length > 0) {
+          console.log("hit");
+
+          for (const intersection of wallIntersections) {
+            this.pfx = new ParticleSystem(this.scene, intersection.point);
+          }
+
+          // Iterate through enemy intersections
+          for (const intersection of enemyIntersections) {
+            // Check if the intersection corresponds to an enemy's model
+            const hitEnemy = this.spawner.enemies.find(enemy => enemy.model.userData.id === intersection.object.userData.id);
+            if (hitEnemy) {
+              console.log("enemy Hit");
+              // Additional functionality for hitting an enemy
+              this.player.score += 500;
+              // Add your code to remove the enemy or perform any other specific actions
+              this.scene.remove(hitEnemy.model);
+              // Remove the enemy from the spawner
+              this.spawner.removeEnemy(hitEnemy);
+              this.pfx = new ParticleSystem(this.scene, intersection.point);
+            }
+          }
+
+          // Remove bullet and update player
+          this.scene.remove(bullet.bullet);
+          this.player.removeBullet(bullet);
+      }
     }
   }
 }
 
 //particle system
 class ParticleSystem {
-  constructor(scene) {
+  constructor(scene, position) {
     this.scene = scene;
+    this.position = position
     this.radius = 1;
-    this.expansionSpeed = 5;
-    this.maxRadius = 200;
-    this.particleSize = 0.5;
+    this.expansionSpeed = 20;
+    this.maxRadius = 10;
+    this.particleSize = 0.8;
 
     this.init();
   }
@@ -602,6 +716,12 @@ class ParticleSystem {
 
     this.points = new THREE.Points(sphereGeometry, pointsMaterial);
     this.scene.add(this.points);
+    this.points.position.copy(this.position);
+
+    //delete points from the scene in 2 seconds if they persist 
+    setTimeout(() => {
+      this.scene.remove(this.points);
+    }, 2000);
   }
 
   update(deltaTime) {
@@ -635,11 +755,13 @@ class Enemy {
     this.model = null;
     this.player = player;
     this.forwardDirection = new THREE.Vector3(0, 0, 1);
-
-    this.loadModel();
+    this.userData = { id: "enemyID" + Math.random().toString(36).substr(2, 9) };
+    this.loadModelPromise = this.loadModel();
   }
 
   loadModel() {
+    //promise the model will be loaded first before continuing
+    return new Promise((resolve, reject) => {
       const loader = new GLTFLoader();
       //passing the animated model into the loader
       loader.load('../enemy/enemy-running.gltf', (gltf) => {
@@ -650,14 +772,17 @@ class Enemy {
 
         if (gltf.animations && gltf.animations.length > 0) { //check the frames of the file are greater than 0
           this.mixer = new THREE.AnimationMixer(this.model); // create a new mixer
-          gltf.animations.forEach((clip) => { 
+          gltf.animations.forEach((clip) => {
             this.mixer.clipAction(clip).play();// go through each clip in sequence to animate 
           });
         }
+        //no resolution is needed
+        resolve();
+      });
     });
   }
-  followPlayer()
-  {
+  
+  followPlayer() {
     if (!this.model || !this.player) {
       return;
     }
@@ -679,10 +804,9 @@ class Enemy {
     // Update the enemy's position to approach the player
     this.model.position.add(this.forwardDirection.clone().multiplyScalar(speed));
   }
-  
-  lookAtPlayer(){
-    if(!this.model)
-    {
+
+  lookAtPlayer() {
+    if (!this.model) {
       return;
     }
     // Calculate the direction vector from the enemy to the player
@@ -699,10 +823,9 @@ class Enemy {
       //using time to update the animation frames
       this.mixer.update(deltaTime);
     }
-    if(this.model)
-    {
-    this.lookAtPlayer();
-    this.followPlayer();
+    if (this.model) {
+      this.lookAtPlayer();
+      this.followPlayer();
     }
   }
 }
@@ -712,8 +835,7 @@ class EnemySpawner {
   constructor(scene, player) {
     this.init(scene, player);
   }
-  init(scene, player)
-  {
+  init(scene, player) {
     this.scene = scene;
     this.enemies = [];
     this.spawnTimer = 0;
@@ -729,21 +851,27 @@ class EnemySpawner {
       // Still in the countdown phase
       this.countdown -= 1;
     }
-      //
     else if (this.spawnTimer >= this.spawnInterval) {
       this.spawnTimer = 0;
       //create new enemy and set its position
-      const enemy = new Enemy(this.scene, new THREE.Vector3(), 20, this.player);
-      enemy.position.x = Math.random() * 500 - 250;
-      enemy.position.z = Math.random() * 500 - 250;
-      enemy.position = new THREE.Vector3(enemy.position.x, -8, enemy.position.z);
-      //add enemies to list
-      this.enemies.push(enemy);
-      if (this.spawnInterval > 100) {
-        // Gradually reduce the spawn interval
-        this.spawnInterval *= 0.95;
-      }
+      const enemy = new Enemy(this.scene, new THREE.Vector3(), 13, this.player);
+      //apply promise after creation for the spawner to do the rest of the work once the model is loaded
+      enemy.loadModelPromise.then(() => {
+        // The model is fully loaded, continue
+        enemy.position.x = Math.random() * 500 - 250;
+        enemy.position.z = Math.random() * 500 - 250;
+        enemy.position = new THREE.Vector3(enemy.position.x, -8, enemy.position.z);
+        //add enemies to list
+        this.enemies.push(enemy);
+        if (this.spawnInterval > 100) {
+          // Gradually reduce the spawn interval
+          this.spawnInterval *= 0.95;
+        }
+      });
     }
+  }
+  removeEnemy(enemyInstance) {
+    this.enemies = this.enemies.filter(enemy => enemy !== enemyInstance);
   }
 
   update(deltaTime) {
@@ -757,6 +885,7 @@ class EnemySpawner {
 // LoadGame class that calls the init function on construction
 class LoadGame {
   constructor() {
+    this.isGameOver = false;
     this.init();
   }
 
@@ -832,8 +961,8 @@ class LoadGame {
     this.wallBuilder.createWall(wallGeometryX, initialPositionX, numberOfwalls, offset, 'z', 2000);
     this.wallBuilder.createWall(wallGeometryX, initialPositionXL, numberOfwalls, offset, 'z', 4000);
     this.wallBuilder.createWall(wallGeometryZ, initialPositionZL, numberOfwalls, offset, 'x', 3000);
-    
-   this.previousAnim = null;
+
+    this.previousAnim = null;
     // Load a 3D model
     this.loadAudio();
     this.loadAnimatedModel();
@@ -851,10 +980,10 @@ class LoadGame {
     this.audioLoader.load('../sounds/Background_music_paper.mp3', (buffer) => {
       const delay = 3000;
       setTimeout(() => {
-      backgroundSound.setBuffer(buffer);
-      backgroundSound.setLoop(true);
-      backgroundSound.setVolume(0.1);
-      backgroundSound.play();
+        backgroundSound.setBuffer(buffer);
+        backgroundSound.setLoop(true);
+        backgroundSound.setVolume(0.1);
+        backgroundSound.play();
       }, delay);
     });
 
@@ -872,17 +1001,18 @@ class LoadGame {
       scene: this.scene,
       spawner: this.spawner,
     }
+    const Obstacle = new VisualObstacle(this.scene);
     //add player instance
     this.player = new CharacterController(params);
-    this.plusAmmo = new PlusAmmo(this.scene);
-    
+    this.plusAmmo = new AmmoSpawner(this.scene);
+
     //enemy spawner
-    this.spawner = new EnemySpawner(this.scene, this.player);    
+    this.spawner = new EnemySpawner(this.scene, this.player);
     //third person camera instance
     this.thirdPersonCamera = new ThirdPersonCamera({ camera: this.camera, target: this.player });
 
     //check raycast for the player detection
-    this.rayCast = new RaycastCollision(this.player, this.wallBuilder,this.plusAmmo, this.spawner, this.deathSound);
+    this.rayCast = new RaycastCollision(this.scene,this.player, this.wallBuilder, this.plusAmmo, this.spawner, this.deathSound, this);
   }
 
   // Update the camera and renderer size when the window is resized
@@ -894,24 +1024,30 @@ class LoadGame {
 
   // Animate the scene FPS update
   animate() {
+    if (this.isGameOver) {
+      return; // stop animating
+    }
     requestAnimationFrame((t) => {
       if (this.previousAnim === null) {
         this.previousAnim = t;
       }
       if (this.player) {
-        this.player.score++; 
+        this.player.score++;
         //update ammuniton and score
         document.getElementById('Score').textContent = `Score: ${Math.floor(this.player.score * 0.01)}`;
         document.getElementById('follow_player').textContent = `Paper: ${this.player.ammunition}`;
       }
       this.renderer.render(this.scene, this.camera);
       this.wallBuilder.update();
-      this.step(t - this.previousAnim);
-      this.previousAnim = t;
       this.rayCast.checkCollision();
-      this.animate();
+      this.rayCast.checkBulletCollision();
+      //set the game over state
+      if (!this.isGameOver) {
+        this.step(t - this.previousAnim);
+        this.previousAnim = t;
+        this.animate();
+      }
     });
-
   }
 
   // Step the animation per second 
@@ -922,8 +1058,19 @@ class LoadGame {
       this.player.update(timeElapsedSec);
       this.spawner.update(timeElapsedSec);
     }
+    if (this.rayCast.pfx) {
+      this.rayCast.pfx.update(timeElapsedSec);
+    }
     this.plusAmmo.update(timeElapsedSec);
     this.thirdPersonCamera.update(timeElapsedSec);
+  }
+
+  setGameOver() {
+    this.isGameOver = true;
+    document.cookie = `score=${Math.floor(this.player.score * 0.01)}`;
+    if (typeof showOverlay === 'function') {
+      showOverlay(Math.floor(this.player.score * 0.01));
+    }
   }
 }
 
@@ -931,6 +1078,10 @@ class LoadGame {
 let Game = null
 window.addEventListener('DOMContentLoaded', () => { Game = new LoadGame(); });
 
-//Assetes Credits below
+function showOverlay(score) {
+  document.getElementById("overlay").style.display = "block";
+  document.getElementById("overlayScore").innerText = score;
+}
 
-//Credit "paper_ball.gltf" - >>This work is based on "Paper Low" (https://sketchfab.com/3d-models/paper-low-bab9b0a4a3194165be4ac939c565d39f) by bargin_bill_bradly (https://sketchfab.com/bargin_bill_bradly) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+//Assetes Credits below
+//Credit "paper_ball.gltf" - >>This work is based on "Paper Low" (https://sketchfab.com/3d-models/paper-low-bab9b0a4a3194165be4ac939c565d39f) by bargin_bill_bradly (https://sketchfab.com/bargin_bill_bradly) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/) 

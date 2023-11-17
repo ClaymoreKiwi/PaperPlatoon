@@ -39,6 +39,11 @@
           <div id="turnLeft" class="virtual-button">Left</div>
           <div id="turnRight" class="virtual-button">Right</div>
         </div>
+    <div id="overlay" style="display: none;">
+      <h2>Game Over</h2>
+      <h3>Your Score: <span id="overlayScore">0</span></h3>
+      <button id="retryButton" onclick="retryGame()">Retry</button>
+    </div>
   <script type="module" src="../js/combined.js"></script>
   </div>
   <script>
@@ -50,6 +55,12 @@
       document.getElementById("loader").style.display = "none";
       document.getElementById("myDiv").style.display = "block";
       document.getElementById("loading").style.display = "none";
+    }
+
+    function retryGame() {
+      // Add logic to reset the game and hide the overlay
+      document.getElementById("overlay").style.display = "none";
+      location.reload();
     }
   </script>
 </body>

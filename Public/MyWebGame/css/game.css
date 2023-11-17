@@ -7,6 +7,7 @@ button {
   color: navy;
   align-items: center;
 }
+
 /*use of the background image accross pages*/
 #paper {
   background-image: url(../images/paper.jpg);
@@ -14,19 +15,22 @@ button {
   background-size: 100%;
   background-position: center;
 }
+
 /*creation and use of font face to be used in other tags*/
 @font-face {
   font-family: penfonts;
   src: url(../fonts/nikotinusDEMO.otf);
 }
+
 /*body elements use the pen font*/
 body {
   font-family: penfonts;
   color: navy;
   overflow: hidden;
 }
+
 /*style the ammo element for the UI (its called paper in the game))*/
-#follow_player{
+#follow_player {
   position: absolute;
   z-index: 100;
   border: 3px solid black;
@@ -34,11 +38,12 @@ body {
   padding-bottom: 1%;
   font-size: 40px;
   display: flex;
-  transform: translate(0 , 100%);
+  transform: translate(0, 100%);
   flex-direction: column;
 }
+
 /*style the score element for the UI*/
-#Score{
+#Score {
   position: absolute;
   z-index: 99;
   border: 3px solid black;
@@ -49,7 +54,7 @@ body {
 }
 
 /* Loader in between pages for the game */
-#loader{
+#loader {
   position: absolute;
   left: 50%;
   top: 50%;
@@ -66,13 +71,24 @@ body {
 
 /* webkit for devices that dont support CSS animations*/
 @-webkit-keyframes spin {
-  0% { -webkit-transform: rotate(0deg); }
-  100% { -webkit-transform: rotate(360deg); }
+  0% {
+    -webkit-transform: rotate(0deg);
+  }
+
+  100% {
+    -webkit-transform: rotate(360deg);
+  }
 }
+
 /*animate the loading bar*/
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Add animation to "page content" */
@@ -83,22 +99,39 @@ body {
   animation-name: animatebottom;
   animation-duration: 1s
 }
+
 /*webkit to do the same for unsupported browsers */
 @-webkit-keyframes animatebottom {
-  from { bottom:-100px; opacity:0 } 
-  to { bottom:0px; opacity:1 }
+  from {
+    bottom: -100px;
+    opacity: 0
+  }
+
+  to {
+    bottom: 0px;
+    opacity: 1
+  }
 }
+
 /*once loaded animate test to fade in from the botton up*/
-@keyframes animatebottom { 
-  from{ bottom:-100px; opacity:0 } 
-  to{ bottom:0; opacity:1 }
+@keyframes animatebottom {
+  from {
+    bottom: -100px;
+    opacity: 0
+  }
+
+  to {
+    bottom: 0;
+    opacity: 1
+  }
 }
 
 /* Style for virtual buttons */
 .virtual-button {
   background-color: #007bff;
   color: #fff;
-  padding: 10px; /* Adjust padding for size */
+  padding: 10px;
+  /* Adjust padding for size */
   border: none;
   border-radius: 5px;
   margin: 10px;
@@ -117,8 +150,9 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  z-index: 1; 
+  z-index: 1;
 }
+
 #virtual-container {
   position: fixed;
   bottom: 60px;
@@ -127,10 +161,10 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  z-index: 1; 
+  z-index: 1;
 }
 
-#loading{
+#loading {
   position: absolute;
   left: 0%;
   top: 0%;
@@ -143,6 +177,43 @@ h2 {
   font-size: 50px;
   position: absolute;
   left: 50%;
-  top: calc(50% + 30px); /* Adjust this value to create space below #loader */
+  top: calc(50% + 30px);
   transform: translate(-50%, -50%);
+  margin-bottom: 20px;
+}
+
+h3 {
+  font-size: 50px;
+  position: absolute;
+  left: 50%;
+  top: calc(50% + 100px);
+  transform: translate(-50%, -50%);
+  margin-bottom: 20px;
+}
+
+#overlay {
+  position: absolute;
+  display: flex;
+  z-index: 101;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  padding: 20px;
+  background-color: whitesmoke;
+  opacity: 0.9;
+  text-align: center;
+}
+
+#retryButton {
+  font-size: 30px;
+  position: absolute;
+  top: 50vh;
+  left: 50vw;
+  padding: 10px 20px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
 }

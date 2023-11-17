@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 
@@ -13,14 +12,14 @@
   <h1 class="center">Register</h1>
   <p>Fill in your user name and password</p>
 
-  <form align="center" id='register-Form'>
-    <label for="uname"><b>Username:</b></label>
-    <input type="text" autocomplete="off" placeholder="Enter User Name" name="uname" id="uname" required>
+  <form align="center">
+    <label for="username"><b>Username:</b></label>
+    <input type="text" placeholder="Enter User Name" name="email" id="email" required><br>
+
+    <label for="password"><b>Password:</b></label>
+    <input type="password" placeholder="Enter Password" name="psw" id="psw" required>
     <br>
-    <label for="psw"><b>Password:</b></label>
-    <input type="password" autocomplete="off" placeholder="Enter Password" name="psw" id="psw" required>
-    <br>
-    <button type="submit">Register</button>
+    <button onclick="window.location.href='404.html'">Register</button>
   </form>
 
   <p>Already have an account? <a href="newuser.html"> Login here</a></p>
@@ -28,41 +27,7 @@
   <p>not interested in an acount? <a href="Game.html"> Go to the game</a></p>
 
   <button onclick="window.location.href='../index.html'">Back to home</button>
-  
-  <script>
-    const form = document.getElementById('register-Form');
-    form.addEventListener('submit', registerUser);
-  
-    async function registerUser(event) {
-      event.preventDefault();
-      // User name fetched from the input fields
-      const username = form.elements['uname'].value;
-      const password = form.elements['psw'].value;
-  
-      // Request made to the server
-      try {
-        const response = await fetch('/register', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            username,
-            password
-          })
-        });
-  
-        if (response.ok) {
-          const data = await response.json();
-          console.log(data);
-        } else {
-          console.error('Registration failed');
-        }
-      } catch (error) {
-        console.error('Error during registration:', error);
-      }
-    }
-  </script>
+  <script src="script.js"></script>
 </body>
 
 </html>
