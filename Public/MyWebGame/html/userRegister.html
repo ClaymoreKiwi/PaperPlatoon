@@ -9,34 +9,38 @@
 </head>
 
 <body id="paper">
-  <h1 class="center">Login</h1>
+  <h1 class="center">Register</h1>
   <p>Fill in your user name and password</p>
 
-  <form align="center" id='login-Form'>
+  <form align="center" id='register-Form'>
     <label for="uname"><b>Username:</b></label>
     <input type="text" autocomplete="off" placeholder="Enter User Name" name="uname" id="uname" required>
     <br>
     <label for="psw"><b>Password:</b></label>
     <input type="password" autocomplete="off" placeholder="Enter Password" name="psw" id="psw" required>
     <br>
-    <button type='submit'>Login</button>
+    <button type='submit'>Register</button>
   </form>
 
-  <p>not interested in an acount? <a href="Game.html">Go to the game</a></p>
+  <p>Already have an account? <a href="login.html"> Login here</a></p>
+
+  <p>not interested in an acount? <a href="Game.html"> Go to the game</a></p>
 
   <button onclick="window.location.href='../index.html'">Back to home</button>
+
+    
   <script>
-    const form = document.getElementById('login-Form');
-    form.addEventListener('submit', loginUser);
+    const form = document.getElementById('register-Form');
+    form.addEventListener('submit', registerUser);
   
-    async function loginUser(event) {
+    async function registerUser(event) {
       event.preventDefault();
       // User name fetched from the input fields
       const username = form.elements['uname'].value;
       const password = form.elements['psw'].value;
   
       // Request made to the server
-      const response = await fetch('/login', {
+      const response = await fetch('/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -48,13 +52,11 @@
       }).then((res) => res.json());
   
        if (response.status === 'ok') {
-        console.log('token recieved: ', response.data);
-        alert(`Login Successful, Welcome ${username}`);
-        //load game
-        window.location.href = '/html/Game.html';
+        alert(`Registration Successful, Welcome ${username}`);
+        window.location.href = '/html/login.html';
 
       } else {
-        alert(`${response.error}`);
+        alert(`Registration Failed, ${response.error}`);
       }
     }
   </script>
