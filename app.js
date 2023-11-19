@@ -15,6 +15,8 @@ const MONGODB_PASSWORD = process.env.MONGODB_PASSWORD || 'C9d11P5Bdc';
 //using environment variables makes the string more secure
 //doing this for other parts of the string eg, cluster or database would be good too
 const MONGODB_URI = process.env.MONGODB_URI || `mongodb+srv://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@pp-cluster1.zlvot0m.mongodb.net/`;
+//local database for testing
+//const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/paperDb';
 
 const app = express();
 const port = 3000;
