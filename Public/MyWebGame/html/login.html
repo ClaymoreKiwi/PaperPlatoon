@@ -50,6 +50,7 @@
        if (response.status === 'ok') {
         console.log('token recieved: ', response.data);
         alert(`Login Successful, Welcome ${username}`);
+        localStorage.setItem('userToken', response.data);
         //load game
         window.location.href = '/html/Game.html';
 

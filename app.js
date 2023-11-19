@@ -8,10 +8,9 @@ const User = require("./Public/MyWebGame/js/model/user");
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 //secure secret for token validation
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET || 'jnsdfijbweiuh/@#$34SEFWEF2df3ererwedf!@##$';
+//storing in environment variables for security
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/paperDb';
-
-const https = require('https');
 
 const app = express();
 const port = 3000;
@@ -24,7 +23,56 @@ mongoose.connect(MONGODB_URI);
 app.use(express.static("./Public/MyWebGame"));
 app.use(bodyParser.json());
 
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//submit the score for the player
+app.post('/submit-score', async (req, res) => {
+  const { token, score } = req.body;
 
+  try {
+    // Verify the token to get the user ID
+    const decodedToken = jwt.verify(token, JWT_SECRET);
+    const userId = decodedToken.id;
+
+    // Update the user's high score in the database
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.json({ status: 'error', error: 'User not found' });
+    }
+
+    if (score > user.highScore) {
+      user.highScore = score;
+      await user.save();
+      return res.json({status: 'ok', data: score});
+    }
+
+    return res.json({ status: 'ok' });
+  } catch (error) {
+    return res.json({ status: 'error', error: 'Invalid token' });
+  }
+});
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//Get the user score
+app.get('/get-user-score', async (req, res) => {
+  try {
+    // Extract the token from the Authorization header
+    const authToken = req.headers.authorization.replace('Bearer ', '');
+
+    // Verify the token to get the user ID
+    const decodedToken = jwt.verify(authToken, JWT_SECRET);
+    const userId = decodedToken.id;
+
+    // Find the user in the database
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.json({ status: 'error', error: 'User not found' });
+    }
+
+    // Return the user's score
+    return res.json({ status: 'ok', userScore: user.highScore });
+  } catch (error) {
+    return res.json({ status: 'error', error: 'Invalid token' });
+  }
+});
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //Login Information
 app.post('/login', async (req, res) => {
@@ -57,7 +105,7 @@ app.post('/login', async (req, res) => {
 app.post('/register', async (req, res) => {
   //hash the password before adding to the database
   const {username, password: plainTextPassword} = req.body;
-
+  const uppercaseRegex = /[A-Z]/;
   //user login handling
   if(!username || typeof username !== 'string'){
     return res.json({status: 'error', error: 'Error Message:\nInvalid username'})
@@ -66,8 +114,12 @@ app.post('/register', async (req, res) => {
   if(!plainTextPassword || typeof plainTextPassword !== 'string'){
     return res.json({status: 'error', error: 'Error Message:\nInvalid password'})
   }
+  //adding complexity to passwords
   if(plainTextPassword.length < 8){
     return res.json({status: 'error', error: 'Error Message:\npassword is too short, use 8 or more charcters'})
+  }
+  else if (!uppercaseRegex.test(plainTextPassword)) {
+  return res.json({ status: 'error', error: 'Error Message:\nPassword must contain at least one uppercase letter' });
   }
 
   const password = await bcrypt.hash(plainTextPassword, 10);

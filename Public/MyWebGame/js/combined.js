@@ -886,6 +886,8 @@ class EnemySpawner {
 class LoadGame {
   constructor() {
     this.isGameOver = false;
+    //store high score locally
+    this.highScore = parseInt(localStorage.getItem('highScore'), 0) || 0;
     this.init();
   }
 
@@ -1064,23 +1066,86 @@ class LoadGame {
     this.plusAmmo.update(timeElapsedSec);
     this.thirdPersonCamera.update(timeElapsedSec);
   }
-
+  //server request for user data storage or local storage when no user is present
   setGameOver() {
     this.isGameOver = true;
-    document.cookie = `score=${Math.floor(this.player.score * 0.01)}`;
-    if (typeof showOverlay === 'function') {
-      showOverlay(Math.floor(this.player.score * 0.01));
+    const currentScore = Math.floor(this.player.score * 0.01);
+
+    //check the user token
+    const userToken = localStorage.getItem('userToken') //|| document.cookie.replace(/(?:(?:^|.*;\s*)userToken\s*=\s*([^;]*).*$)|^.*$/, '$1');
+    console.log("user token", userToken);
+    if(!userToken){
+      console.log("token not used");
+      // Update high score if the current score is higher
+      if (currentScore > this.highScore) {
+        this.highScore = currentScore;
+        localStorage.setItem('highScore', this.highScore.toString());
+      }
+      // Display the score or perform other actions as needed
+      if (typeof showOverlay === 'function') {
+        showOverlay(currentScore, this.highScore);
+      }
     }
-  }
+    else {
+      // User is logged in
+      console.log('User logged in');
+  
+      const authToken = userToken;
+      const finalScore = currentScore;
+  
+      // Fetch the user's score from the server
+      fetch('/get-user-score', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        },
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          // Display the user's score
+          if (typeof showOverlay === 'function') {
+            showOverlay(currentScore, data.userScore);
+          }
+        })
+        .catch((error) => {
+          console.error('Error fetching user score:', error);
+  
+          // Display the current score in case of an error
+          if (typeof showOverlay === 'function') {
+            showOverlay(currentScore, this.highScore);
+          }
+        });
+  
+      // Send the score to the server
+      fetch('/submit-score', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          token: authToken,
+          score: finalScore,
+        }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          console.log(data); // Handle the server response if needed
+        })
+        .catch((error) => {
+          console.error('Error submitting score:', error);
+        });
+    }
+    }
 }
 
 //define the game
 let Game = null
 window.addEventListener('DOMContentLoaded', () => { Game = new LoadGame(); });
 
-function showOverlay(score) {
+function showOverlay(roundScore, highScore) {
   document.getElementById("overlay").style.display = "block";
-  document.getElementById("overlayScore").innerText = score;
+  document.getElementById("roundScore").innerText = roundScore;
+  document.getElementById("highScore").innerText = highScore;
 }
 
 //Assetes Credits below
