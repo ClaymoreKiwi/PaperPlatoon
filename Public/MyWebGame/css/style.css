@@ -55,6 +55,25 @@ p {
   color: navy;
 }
 
+table {
+  width: 60%;
+  margin: 20px auto;
+  border-collapse: collapse;
+  max-height: 400px; 
+  overflow-y: auto;
+}
+
+th, td {
+  border: 1px solid #dddddd;
+  text-align: center; 
+  padding: 12px; 
+  font-size: 40px; 
+}
+
+th {
+  background-color: #f2f2f2;
+}
+
 /*use of the background image accross pages*/
 #paper {
   background-image: url(../images/paper.jpg);

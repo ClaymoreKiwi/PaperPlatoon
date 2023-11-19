@@ -10,7 +10,11 @@ const jwt = require('jsonwebtoken');
 //secure secret for token validation
 const JWT_SECRET = process.env.JWT_SECRET || 'jnsdfijbweiuh/@#$34SEFWEF2df3ererwedf!@##$';
 //storing in environment variables for security
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/paperDb';
+const MONGODB_USERNAME = process.env.MONGODB_USERNAME || 'tinglebryce';
+const MONGODB_PASSWORD = process.env.MONGODB_PASSWORD || 'C9d11P5Bdc';
+//using environment variables makes the string more secure
+//doing this for other parts of the string eg, cluster or database would be good too
+const MONGODB_URI = process.env.MONGODB_URI || `mongodb+srv://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@pp-cluster1.zlvot0m.mongodb.net/`;
 
 const app = express();
 const port = 3000;
@@ -22,6 +26,21 @@ mongoose.connect(MONGODB_URI);
 //Main Usage
 app.use(express.static("./Public/MyWebGame"));
 app.use(bodyParser.json());
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//Player Leaderboard
+app.get('/get-leaderboard', async (req, res) => {
+  try {
+    // Retrieve leaderboard data from the database
+    const leaderboard = await User.find({}, 'username highScore').sort({ highScore: -1 }).limit(10);
+
+    // Send the leaderboard data as JSON
+    res.json(leaderboard);
+  } catch (error) {
+    res.json({ status: 'error', error: 'Failed to retrieve leaderboard' });
+  }
+});
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //submit the score for the player
@@ -50,6 +69,7 @@ app.post('/submit-score', async (req, res) => {
     return res.json({ status: 'error', error: 'Invalid token' });
   }
 });
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //Get the user score
 app.get('/get-user-score', async (req, res) => {
@@ -73,6 +93,7 @@ app.get('/get-user-score', async (req, res) => {
     return res.json({ status: 'error', error: 'Invalid token' });
   }
 });
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //Login Information
 app.post('/login', async (req, res) => {
