@@ -24,9 +24,8 @@
   </div>
   <div style="display: none;" id="myDiv" class="animate-bottom">
     <h1 align="center">Paper Platoon</h1>
-    <p style='font-size: 23px'>
-        <button onclick="window.location.href='../index.html'">back</button>
-    </p>
+    <button onclick="window.location.href='../index.html'">back</button>
+    <button id="logoutButton" onclick="logout()" style="display: none;">logout</button>
     <div id="follow_player">Paper: 0</div>
     <div id="Score">Score: 0</div>
     <div id="virtual-container">
@@ -56,12 +55,21 @@
       document.getElementById("loader").style.display = "none";
       document.getElementById("myDiv").style.display = "block";
       document.getElementById("loading").style.display = "none";
+
+      const sessionActive = localStorage.getItem('userToken') !== null;
+      document.getElementById("logoutButton").style.display = sessionActive ? "block" : "none";
     }
 
     function retryGame() {
       // Add logic to reset the game and hide the overlay
       document.getElementById("overlay").style.display = "none";
       location.reload();
+    }
+
+    function logout() {
+      localStorage.removeItem('userToken');
+      localStorage.clear();
+      window.location.href = 'login.html';
     }
   </script>
 </body>

@@ -6,6 +6,7 @@ button {
   padding-bottom: 1%;
   color: navy;
   align-items: center;
+  align-content: center;
 }
 
 /*use of the background image accross pages*/
@@ -212,6 +213,7 @@ h4 {
   opacity: 0.9;
   text-align: center;
 }
+
 
 #retryButton {
   font-size: 30px;

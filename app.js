@@ -126,45 +126,48 @@ app.post('/login', async (req, res) => {
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //running registerd info to here
 app.post('/register', async (req, res) => {
-  //hash the password before adding to the database
-  const {username, password: plainTextPassword} = req.body;
+  // Hash the password before adding to the database
+  const { username, password: plainTextPassword } = req.body;
   const uppercaseRegex = /[A-Z]/;
-  //user login handling
-  if(!username || typeof username !== 'string'){
-    return res.json({status: 'error', error: 'Error Message:\nInvalid username'})
+  const alphanumericRegex = /^[a-zA-Z0-9]+$/; // Regular expression for alphanumeric characters
+
+  // User login handling
+  if (!username || typeof username !== 'string' || !alphanumericRegex.test(username)) {
+    return res.json({ status: 'error', error: 'Error Message:\nInvalid username. Use only letters and numbers.' });
   }
-  //password handling
-  if(!plainTextPassword || typeof plainTextPassword !== 'string'){
-    return res.json({status: 'error', error: 'Error Message:\nInvalid password'})
+
+  // Password handling
+  if (!plainTextPassword || typeof plainTextPassword !== 'string') {
+    return res.json({ status: 'error', error: 'Error Message:\nInvalid password' });
   }
-  //adding complexity to passwords
-  if(plainTextPassword.length < 8){
-    return res.json({status: 'error', error: 'Error Message:\npassword is too short, use 8 or more charcters'})
-  }
-  else if (!uppercaseRegex.test(plainTextPassword)) {
-  return res.json({ status: 'error', error: 'Error Message:\nPassword must contain at least one uppercase letter' });
+
+  // Adding complexity to passwords
+  if (plainTextPassword.length < 8 || !uppercaseRegex.test(plainTextPassword)) {
+    return res.json({
+      status: 'error',
+      error: 'Error Message:\nPassword must be 8 characters or more, contain at least one uppercase letter'
+    });
   }
 
   const password = await bcrypt.hash(plainTextPassword, 10);
 
-  try{
-    //create new user and add in the name and password
-      const response = await User.create({
-        username,
-        password,
-        highScore: 0
-      });
-      //print out success message (debugging)
-      console.log("user created successfully",response);
-      return res.json({status: 'ok'});
-  }
-  catch(error){
-    if(error.code === 11000)
-    {
-      //duplicate key
-      return res.json({status: error, error: "Error Message:\nUser name already exists"});
+  try {
+    // Create a new user and add in the name and password
+    const response = await User.create({
+      username,
+      password,
+      highScore: 0
+    });
+
+    // Print out success message (debugging)
+    console.log("user created successfully", response);
+    return res.json({ status: 'ok' });
+  } catch (error) {
+    if (error.code === 11000) {
+      // Duplicate key
+      return res.json({ status: 'error', error: "Error Message:\nUser name already exists" });
     }
-    //other error that may occur 
+    // Other error that may occur
     throw error;
   }
 });

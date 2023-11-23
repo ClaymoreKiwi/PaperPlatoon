@@ -1142,7 +1142,7 @@ class LoadGame {
 let Game = null
 window.addEventListener('DOMContentLoaded', () => { Game = new LoadGame(); });
 
-function showOverlay(roundScore, highScore) {
+const showOverlay = (roundScore, highScore) => {
   document.getElementById("overlay").style.display = "block";
   document.getElementById("roundScore").innerText = roundScore;
   document.getElementById("highScore").innerText = highScore;
