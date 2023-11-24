@@ -178,6 +178,7 @@ class Bullet {
     this.player = player;
     this.position = new THREE.Vector3();
     this.velocity = new THREE.Vector3();
+    this.collided = false;
   }
 
   shoot() {
@@ -582,7 +583,7 @@ class RaycastCollision {
     this.wallManager = wallManager;
     this.ammoItems = ammoItems;
     this.raycaster = new THREE.Raycaster(undefined, undefined, 0, 10);
-    this.bulletRaycaster = new THREE.Raycaster(undefined, undefined, 0, 5);
+    this.bulletRaycaster = new THREE.Raycaster(undefined, undefined, 0, 3);
     this.direction = player.Direction;
     this.spawner = enemies;
     this.sound = sound;
@@ -617,8 +618,10 @@ class RaycastCollision {
     // Check for intersections with objects in the scene
     const wallIntersections = this.raycaster.intersectObjects(this.wallManager.walls, true);
     //the models are loaded asynchronosly so we catch the error while the model is still loading
+    try{
     this.enemyIntersections = this.raycaster.intersectObjects(this.spawner.enemies.map(enemy => enemy.model), true);
-
+    }
+    catch{};
     const ammoIntersections = this.raycaster.intersectObjects(AmmoSpawner.ammoList.map(ammo => ammo.group), true);
 
     if (wallIntersections.length > 0) {
@@ -637,8 +640,11 @@ class RaycastCollision {
       this.gameOver.setGameOver();
     }
     if (ammoIntersections.length > 0) {
+      //loop through the ammo array
       for (let i = 0; i < ammoIntersections.length; i++) {
+        //get the intersections 
         const intersection = ammoIntersections[i];
+        //find the piece of ammo and remove it
         const intersectedAmmo = AmmoSpawner.ammoList.find(ammo => {
           return ammo.group.uuid !== intersection.object.uuid; // Compare UUIDs
         });
@@ -655,42 +661,61 @@ class RaycastCollision {
 
   //raycast for bullets
   checkBulletCollision() {
+    //removal arrays
+    const bulletsToRemove = [];
+    const enemiesToRemove = [];
+
     for (const bullet of this.player.bullets) {
-      // Set the bullet ray's origin and direction based on the bullet's position and velocity
-      this.bulletRaycaster.ray.origin.copy(bullet.position);
-      this.bulletRaycaster.ray.direction.copy(bullet.velocity).normalize();
+       // Skip bullets that have already collided
+       if (bullet.collided) {
+          continue;
+        }
 
-      // Check for intersections with objects in the scene
-      const wallIntersections = this.bulletRaycaster.intersectObjects(this.wallManager.walls, true);
-      const enemyIntersections = this.bulletRaycaster.intersectObjects(this.spawner.enemies.map(enemy => enemy.model), true);
+        //set up raycast origin and direction
+        this.bulletRaycaster.ray.origin.copy(bullet.position);
+        this.bulletRaycaster.ray.direction.copy(bullet.velocity).normalize();
 
+        //check the arrays of objects potentially the raycast can intersect
+        const wallIntersections = this.bulletRaycaster.intersectObjects(this.wallManager.walls, true);
+        const enemyMeshes = this.spawner.enemies.map(enemy => enemy.model).filter(mesh => mesh !== null);
+        const enemyIntersections = this.bulletRaycaster.intersectObjects(enemyMeshes, true);
+
+        //check for wall or enemy intersects
         if (wallIntersections.length > 0 || enemyIntersections.length > 0) {
-          console.log("hit");
+            //console.log("hit");
 
-          for (const intersection of wallIntersections) {
-            this.pfx = new ParticleSystem(this.scene, intersection.point);
-          }
-
-          // Iterate through enemy intersections
-          for (const intersection of enemyIntersections) {
-            // Check if the intersection corresponds to an enemy's model
-            const hitEnemy = this.spawner.enemies.find(enemy => enemy.model.userData.id === intersection.object.userData.id);
-            if (hitEnemy) {
-              console.log("enemy Hit");
-              // Additional functionality for hitting an enemy
-              this.player.score += 500;
-              // Add your code to remove the enemy or perform any other specific actions
-              this.scene.remove(hitEnemy.model);
-              // Remove the enemy from the spawner
-              this.spawner.removeEnemy(hitEnemy);
-              this.pfx = new ParticleSystem(this.scene, intersection.point);
+            for (const intersection of wallIntersections) {
+                this.pfx = new ParticleSystem(this.scene, intersection.point);
             }
-          }
 
-          // Remove bullet and update player
-          this.scene.remove(bullet.bullet);
-          this.player.removeBullet(bullet);
-      }
+            for (const intersection of enemyIntersections) {
+                const hitEnemy = this.spawner.enemies.find(enemy => enemy.model.userData.id === intersection.object.userData.id);
+                if (hitEnemy) {
+                    //process the enemy hit, add to the array, add to the score and break out the loop
+                    //console.log("enemy Hit");
+                    this.player.score += 500;
+                    enemiesToRemove.push(hitEnemy);
+                    this.pfx = new ParticleSystem(this.scene, intersection.point);
+                    break;
+                }
+            }
+            
+            //add bullet to array and set collision to true
+            bulletsToRemove.push(bullet);
+            bullet.collided = true;
+        }
+    }
+
+    //work through the bullet removal array and remove all bullets
+    for (const bulletToRemove of bulletsToRemove) {
+        this.scene.remove(bulletToRemove.bullet);
+        this.player.removeBullet(bulletToRemove);
+    }
+
+    //work through the removal array and remove all enemies
+    for (const enemyToRemove of enemiesToRemove) {
+        this.scene.remove(enemyToRemove.model);
+        this.spawner.removeEnemy(enemyToRemove);
     }
   }
 }
@@ -756,12 +781,11 @@ class Enemy {
     this.player = player;
     this.forwardDirection = new THREE.Vector3(0, 0, 1);
     this.userData = { id: "enemyID" + Math.random().toString(36).substr(2, 9) };
-    this.loadModelPromise = this.loadModel();
+    this.loadModel();
   }
 
   loadModel() {
     //promise the model will be loaded first before continuing
-    return new Promise((resolve, reject) => {
       const loader = new GLTFLoader();
       //passing the animated model into the loader
       loader.load('../enemy/enemy-running.gltf', (gltf) => {
@@ -776,10 +800,7 @@ class Enemy {
             this.mixer.clipAction(clip).play();// go through each clip in sequence to animate 
           });
         }
-        //no resolution is needed
-        resolve();
       });
-    });
   }
   
   followPlayer() {
@@ -854,9 +875,8 @@ class EnemySpawner {
     else if (this.spawnTimer >= this.spawnInterval) {
       this.spawnTimer = 0;
       //create new enemy and set its position
-      const enemy = new Enemy(this.scene, new THREE.Vector3(), 13, this.player);
+      const enemy = new Enemy(this.scene, new THREE.Vector3(), 18, this.player);
       //apply promise after creation for the spawner to do the rest of the work once the model is loaded
-      enemy.loadModelPromise.then(() => {
         // The model is fully loaded, continue
         enemy.position.x = Math.random() * 500 - 250;
         enemy.position.z = Math.random() * 500 - 250;
@@ -867,7 +887,6 @@ class EnemySpawner {
           // Gradually reduce the spawn interval
           this.spawnInterval *= 0.95;
         }
-      });
     }
   }
   removeEnemy(enemyInstance) {
