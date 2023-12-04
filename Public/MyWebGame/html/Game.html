@@ -47,31 +47,37 @@
   <script type="module" src="../js/combined.js"></script>
   </div>
   <script>
+    // This script is kept embedded due to DOM loading issues when loaded from an external file
+    // It works as expected here
+  
     let timeOutNum;
-    function timeOut() {
+  
+    const timeOut = () => {
       timeOutNum = setTimeout(showPage, 3000);
     };
-    function showPage() {
+  
+    const showPage = () => {
       document.getElementById("loader").style.display = "none";
       document.getElementById("myDiv").style.display = "block";
       document.getElementById("loading").style.display = "none";
-
+  
       const sessionActive = localStorage.getItem('userToken') !== null;
       document.getElementById("logoutButton").style.display = sessionActive ? "block" : "none";
-    }
-
-    function retryGame() {
+    };
+  
+    const retryGame = () => {
       // Add logic to reset the game and hide the overlay
       document.getElementById("overlay").style.display = "none";
       location.reload();
-    }
-
-    function logout() {
+    };
+  
+    const logout = () => {
       localStorage.removeItem('userToken');
       localStorage.clear();
       window.location.href = 'login.html';
-    }
+    };
   </script>
+  
 </body>
 
 </html>
