@@ -28,38 +28,7 @@
 
   <button onclick="window.location.href='../index.html'">Back to home</button>
 
-    
-  <script>
-    const form = document.getElementById('register-Form');
-    form.addEventListener('submit', registerUser);
-  
-    async function registerUser(event) {
-      event.preventDefault();
-      // User name fetched from the input fields
-      const username = form.elements['uname'].value;
-      const password = form.elements['psw'].value;
-  
-      // Request made to the server
-      const response = await fetch('/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          username,
-          password
-        })
-      }).then((res) => res.json());
-  
-       if (response.status === 'ok') {
-        alert(`Registration Successful, Welcome ${username}`);
-        window.location.href = '/html/login.html';
-
-      } else {
-        alert(`Registration Failed, ${response.error}`);
-      }
-    }
-  </script>
+  <script src="../js/req/register.js"></script>
 </body>
 
 </html>

@@ -25,40 +25,7 @@
   <p>not interested in an acount? <a href="Game.html">Go to the game</a></p>
 
   <button onclick="window.location.href='../index.html'">Back to home</button>
-  <script>
-    const form = document.getElementById('login-Form');
-    form.addEventListener('submit', loginUser);
-  
-    async function loginUser(event) {
-      event.preventDefault();
-      // User name fetched from the input fields
-      const username = form.elements['uname'].value;
-      const password = form.elements['psw'].value;
-  
-      // Request made to the server
-      const response = await fetch('/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          username,
-          password
-        })
-      }).then((res) => res.json());
-  
-       if (response.status === 'ok') {
-        console.log('token recieved: ', response.data);
-        alert(`Login Successful, Welcome ${username}`);
-        localStorage.setItem('userToken', response.data);
-        //load game
-        window.location.href = '/html/Game.html';
-
-      } else {
-        alert(`${response.error}`);
-      }
-    }
-  </script>
+  <script src="../js/req/login.js"></script>
 </body>
 
 </html>
