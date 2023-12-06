@@ -1,6 +1,6 @@
 /*button style elements*/
 button {
-  font-size: 23px;
+  font-size: 1.38em;
   font-weight: bold;
   font-family: penfonts;
   padding-bottom: 1%;
@@ -13,7 +13,7 @@ button {
 #paper {
   background-image: url(../images/paper.jpg);
   background-repeat: vertical;
-  background-size: 100%;
+  background-size: cover;
   background-position: center;
 }
 
@@ -34,10 +34,10 @@ body {
 #follow_player {
   position: absolute;
   z-index: 100;
-  border: 3px solid black;
+  border: .2rem solid black;
   background-color: #ffffff;
   padding-bottom: 1%;
-  font-size: 40px;
+  font-size: 2.4em;
   display: flex;
   transform: translate(0, 100%);
   flex-direction: column;
@@ -47,10 +47,10 @@ body {
 #Score {
   position: absolute;
   z-index: 99;
-  border: 3px solid black;
+  border: .2rem solid black;
   background-color: #ffffff;
   padding-bottom: 1%;
-  font-size: 40px;
+  font-size: 2.4em;
   display: flex;
 }
 
@@ -60,12 +60,12 @@ body {
   left: 50%;
   top: 50%;
   z-index: 1;
-  width: 90px;
-  height: 90px;
-  margin: -76px 0 0 -76px;
-  border: 16px solid #AAAAAA;
+  width: 5.4em;
+  height: 5.4em;
+  margin: -4.56em 0 0 -4.56em;
+  border: 0.96em solid #AAAAAA;
   border-radius: 50%;
-  border-top: 16px solid #3498db;
+  border-top: 0.96em solid #3498db;
   -webkit-animation: spin 2s linear infinite;
   animation: spin 2s linear infinite;
 }
@@ -104,12 +104,12 @@ body {
 /*webkit to do the same for unsupported browsers */
 @-webkit-keyframes animatebottom {
   from {
-    bottom: -100px;
+    bottom: -6em;
     opacity: 0
   }
 
   to {
-    bottom: 0px;
+    bottom: 0em;
     opacity: 1
   }
 }
@@ -117,7 +117,7 @@ body {
 /*once loaded animate test to fade in from the botton up*/
 @keyframes animatebottom {
   from {
-    bottom: -100px;
+    bottom: -6em;
     opacity: 0
   }
 
@@ -131,13 +131,12 @@ body {
 .virtual-button {
   background-color: #007bff;
   color: #fff;
-  padding: 10px;
-  /* Adjust padding for size */
+  padding: 0.6em;
   border: none;
-  border-radius: 5px;
-  margin: 10px;
+  border-radius: 0.3em;
+  margin: 0.6em;
   cursor: pointer;
-  min-width: 50px;
+  min-width: 3em;
   flex: 1;
   align-content: centre;
 }
@@ -156,7 +155,7 @@ body {
 
 #virtual-container {
   position: fixed;
-  bottom: 60px;
+  bottom: 3.6em;
   left: 0;
   width: 100%;
   display: flex;
@@ -174,30 +173,26 @@ body {
   background-color: whitesmoke;
 }
 
-h2 {
-  font-size: 50px;
+h2, h3, h4 {
+  font-size: 3em;
   position: absolute;
   left: 50%;
-  top: calc(50% + 30px);
-  transform: translate(-50%, -50%);
-  margin-bottom: 20px;
+  top: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 1.2em;
+}
+
+/* Specific adjustments for each element */
+h2 {
+  top: calc(50% + 1em);
 }
 
 h3 {
-  font-size: 50px;
-  position: absolute;
-  left: 50%;
-  top: calc(50% + 100px);
-  transform: translate(-50%, -50%);
-  margin-bottom: 20px;
+  top: calc(50% 3em);
 }
+
 h4 {
-  font-size: 50px;
-  position: absolute;
-  left: 50%;
-  top: calc(50% + 170px);
-  transform: translate(-50%, -50%);
-  margin-bottom: 20px;
+  top: calc(50% + 3em);
 }
 
 #overlay {
@@ -208,7 +203,7 @@ h4 {
   top: 0;
   width: 100vw;
   height: 100vh;
-  padding: 20px;
+  padding: 1.2em;
   background-color: whitesmoke;
   opacity: 0.9;
   text-align: center;
@@ -216,14 +211,14 @@ h4 {
 
 
 #retryButton {
-  font-size: 30px;
+  font-size: 1.8em;
   position: absolute;
   top: 50vh;
   left: 50vw;
-  padding: 10px 20px;
+  padding: 0.6em 1.2em;
   background-color: #4CAF50;
   color: white;
   border: none;
-  border-radius: 5px;
+  border-radius: 0.3em;
   cursor: pointer;
 }

@@ -1,5 +1,5 @@
 DB PW: C9d11P5Bdc
-link: https://mywebgame--claymorekiwi.repl.co/html/Game.html - continued progress
+link: https://mywebgame--claymorekiwi.repl.co/html/Game.html - replit version 
 github link : https://github.com/ClaymoreKiwi/PaperPlatoon
 
 Paper Platoon
@@ -22,19 +22,27 @@ the player will then have the option to restart for a new high score
 blue spheres are present in the level and are randomly placed every round to make spotting enemies and ammunition more challenging, as well as enemies spawning in random places faster and faster each spawn 
 ---------------------------------------------------------------------------------------------------------------------------
 SERVER SET UP
-open app.js in VS code
-navigate to location of folder using cd "location" in teh terminal
-run npm i to install all modules
-run node app.js
-server is running on local host 3000
-in web broweser
-enter LocalHost:3000 in your URL
+## Note that Node.js needs to be installed as well as npm for this settup to work
+## MP135 Computers
+1. open nodejs CMD terminal
+2. navigate to the root directory containing "app.js"
+3. run npm i to install relevant modules
+4. run node app.js
+5. open browser and connect to localhost:3000
+
+## Personal computers
+1. open app.js in VS code
+2. navigate to location of folder using cd "location" in the terminal
+3. run npm i to install all modules
+4. run node app.js
+5. enter LocalHost:3000 in your URL in browser
 
 the game is now playable locally
 ---------------------------------------------------------------------------------------------------------------------------
 file structure is as follows:
 
 #ROOT
+node_modules-
 Public-
     -Animations
    	-gltf animation files go here
@@ -60,7 +68,9 @@ Public-
     -js
 	-models
  	   -user Schema
- 	-all javascrip files come here
+	-req
+		-HTML server request js files
+ 	-game js file
  
     -Models
 	-player models and ammunition come here

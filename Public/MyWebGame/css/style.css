@@ -1,12 +1,7 @@
-html {
-  height: 100%;
-  width: 100%;
-}
-
 /*centering elements*/
 .center {
   text-align: center;
-  border: 3px solid black;
+  border: .2rem solid black;
 }
 
 /*grid for the buttons on the main index page*/
@@ -14,19 +9,19 @@ html {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   text-align: center;
-  gap: 5px;
+  gap: .3em;
 }
 
 /*label style elements*/
 label {
-  font-size: 23px;
+  font-size: 1.3rem;
   text-align: center;
   color: navy;
 }
 
 /*button style elements*/
 button {
-  font-size: 23px;
+  font-size: 1.3em;
   font-weight: bold;
   font-family: penfonts;
   padding-bottom: 1%;
@@ -36,13 +31,13 @@ button {
 
 /*header 1 style elements*/
 h1 {
-  font-size: 45px;
+  font-size: 2.7em;
   padding-bottom: 1%;
   color: navy;
 }
 
 h2 {
-  font-size: 40px;
+  font-size: 2.5em;
   padding-bottom: 1%;
   color: navy;
   text-align: center;
@@ -50,24 +45,24 @@ h2 {
 
 /*paragraph style elements*/
 p {
-  font-size: 28px;
+  font-size: 1.68em;
   text-align: center;
   color: navy;
 }
 
 table {
   width: 60%;
-  margin: 20px auto;
+  margin: 1.2em auto;
   border-collapse: collapse;
-  max-height: 400px; 
+  max-height: 24em; 
   overflow-y: auto;
 }
 
 th, td {
-  border: 1px solid #dddddd;
+  border: 0.2rem solid #adadad;
   text-align: center; 
-  padding: 12px; 
-  font-size: 40px; 
+  padding: 0.5em; 
+  font-size: 2.4em; 
 }
 
 th {
@@ -78,7 +73,7 @@ th {
 #paper {
   background-image: url(../images/paper.jpg);
   background-repeat: vertical;
-  background-size: 100%;
+  background-size: cover;
   background-position: center;
 }
 
