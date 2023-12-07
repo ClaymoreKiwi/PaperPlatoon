@@ -511,6 +511,7 @@ class WallManager {
       //add the speed of the occilation to the speed array
       this.speeds.push(speed);
       this.startTimes.push(performance.now());
+      wall.frustumCulled = true;
     }
   }
 
