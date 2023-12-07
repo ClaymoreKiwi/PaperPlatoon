@@ -784,11 +784,10 @@ class Enemy {
     this.loadModel();
   }
 
+
   loadModel() {
-    //promise the model will be loaded first before continuing
-      const loader = new GLTFLoader();
-      //passing the animated model into the loader
-      loader.load('../enemy/enemy-running.gltf', (gltf) => {
+    const loader = new GLTFLoader();
+      loader.loadAsync('../enemy/enemy-running.gltf').then(gltf=>{
         this.model = gltf.scene; // setting the model to the gltf argument
         this.model.scale.setScalar(this.scale); //setting the scale of the model (from spawner)
         this.model.position.copy(this.position); //setting the position of the model (from spawner)
@@ -800,8 +799,8 @@ class Enemy {
             this.mixer.clipAction(clip).play();// go through each clip in sequence to animate 
           });
         }
-      });
-  }
+  });
+}
   
   followPlayer() {
     if (!this.model || !this.player) {
