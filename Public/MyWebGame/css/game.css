@@ -173,26 +173,30 @@ body {
   background-color: whitesmoke;
 }
 
-h2, h3, h4 {
-  font-size: 3em;
+h2 {
+  font-size: 3.6em;
   position: absolute;
   left: 50%;
-  top: 50%;
-  transform: translateX(-50%);
+  top: calc(50% + 1em);
+  transform: translate(-50%, -50%);
   margin-bottom: 1.2em;
 }
 
-/* Specific adjustments for each element */
-h2 {
-  top: calc(50% + 1em);
-}
-
 h3 {
-  top: calc(50% 3em);
-}
-
-h4 {
+  font-size: 3em;
+  position: absolute;
+  left: 50%;
   top: calc(50% + 3em);
+  transform: translate(-50%, -50%);
+  margin-bottom: 1.2em;
+}
+h4 {
+  font-size: 3em;
+  position: absolute;
+  left: 50%;
+  top: calc(50% + 4.5em);
+  transform: translate(-50%, -50%);
+  margin-bottom: 1.2em;
 }
 
 #overlay {
@@ -214,7 +218,7 @@ h4 {
   font-size: 1.8em;
   position: absolute;
   top: 50vh;
-  left: 50vw;
+  left: 48vw;
   padding: 0.6em 1.2em;
   background-color: #4CAF50;
   color: white;
