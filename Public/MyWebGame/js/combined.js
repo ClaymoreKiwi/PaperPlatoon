@@ -798,7 +798,6 @@ class Enemy {
         this.model = gltf.scene; // setting the model to the gltf argument
         this.model.scale.setScalar(this.scale); //setting the scale of the model (from spawner)
         this.model.position.copy(this.position); //setting the position of the model (from spawner)
-        let skinnedMesh;
         this.model.traverse((child) => {
           if (child.isSkinnedMesh) {
             child.userData.enemyId = this.uniqueID; // Assign to the SkinnedMesh

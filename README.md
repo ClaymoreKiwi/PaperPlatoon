@@ -84,3 +84,20 @@ Public-
 -package.json
 -package-lock.json
 -README
+
+---------------------------------------------------------------------------------------------------------------------------
+##Refrences
+
+Paper Model:sketchfab.com. (2022). Paper Karateka - Download Free 3D model by jigenMal. [online] Available at: https://sketchfab.com/3d-models/paper-karateka-55f03f9ad1c14dea87db2a4e37355e52 [Accessed 10 Oct. 2023].
+
+Loading:
+www.w3schools.com. (n.d.). How To Make a Loader. [online] Available at: https://www.w3schools.com/howto/howto_css_loader.asp.
+
+Character controls:simon, simonDev (2020). Simple Character Controller (using Three.js/JavaScript). [online] www.youtube.com. Available at: https://www.youtube.com/watch?v=EkPfhzIbp2g [Accessed 23 Oct. 2023].
+
+Character camera:
+Simon, S. (2020). Simple Third Person Camera (using Three.js/JavaScript). [online] www.youtube.com. Available at: https://www.youtube.com/watch?v=UuNPHOJ_V5o [Accessed 19 Oct. 2023]..
+
+CodeDamn (2020). Node.js Register and Login Tutorial | Work with MongoDB, JWT and Node. [online] www.youtube.com. Available at: https://www.youtube.com/watch?v=b91XgdyX-SM&t [Accessed 8 Nov. 2023].
+
+codedamn (2020). MongoDB + Mongoose + Node.js Crash Course | CRUD and fundamentals of MongoDB. [online] www.youtube.com. Available at: https://www.youtube.com/watch?v=5QEwqX5U_2M&t [Accessed 20 Dec. 2023].
