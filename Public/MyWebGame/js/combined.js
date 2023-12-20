@@ -9,6 +9,7 @@ class CharacterController {
 
   init(params) {
     this.params = params;
+    this.canMove = true;
     this.slowDown = new THREE.Vector3(-0.0005, -0.0001, -5.0);
     this.acceleration = new THREE.Vector3(1, 0.25, 50.0);
     this.velocity = new THREE.Vector3(0, 0, 0);
@@ -111,15 +112,15 @@ class CharacterController {
     const acc = this.acceleration.clone();
     //make speed faster
     if (this.input.keys.shift) {
-      acc.multiplyScalar(2.0);
+      acc.multiplyScalar(1.5);
     }
     //move forward
     if (this.input.keys.forward) {
-      velocity.z += acc.z * 4 * timeInSeconds;
+      velocity.z += acc.z * 3 * timeInSeconds;
     }
     //move backwards
     if (this.input.keys.backward) {
-      velocity.z -= acc.z * 4 * timeInSeconds;
+      velocity.z -= acc.z * 3 * timeInSeconds;
     }
     //rotate left
     if (this.input.keys.left) {
@@ -590,6 +591,7 @@ class RaycastCollision {
     this.sound = sound;
     this.gameOver = gameOver;
     this.pfx = null;
+    this.pfxList = [];
   }
 
   //raycast for player
@@ -629,11 +631,11 @@ class RaycastCollision {
       //console.log("Raycast Hit");
       if (this.player.velocity.z > 0) {
         //take away velocity when the player approaches the wall in a forward manner
-        this.player.velocity.z -= 25;
+        this.player.velocity.z -= 40;
       }
       if (this.player.velocity.z < 0) {
         //add velocity when player is moving in a backward manner
-        this.player.velocity.z += 15;
+        this.player.velocity.z += 30;
       }
     }
     if (this.enemyIntersections.length > 0) {
@@ -687,16 +689,20 @@ class RaycastCollision {
 
             for (const intersection of wallIntersections) {
                 this.pfx = new ParticleSystem(this.scene, intersection.point);
+                this.pfxList.push(this.pfx);
             }
 
             for (const intersection of enemyIntersections) {
-                const hitEnemy = this.spawner.enemies.find(enemy => enemy.model.userData.id === intersection.object.userData.id);
+                const hitEnemy = this.spawner.enemies.find(enemy => enemy.uniqueID === intersection.object.userData.enemyId);
+
+                console.log("Enemy UUIDs:", this.spawner.enemies.map(enemy => enemy.uniqueID));
+                console.log("Intersection UUID:", intersection.object);
+
                 if (hitEnemy) {
-                    //process the enemy hit, add to the array, add to the score and break out the loop
-                    //console.log("enemy Hit");
                     this.player.score += 500;
                     enemiesToRemove.push(hitEnemy);
                     this.pfx = new ParticleSystem(this.scene, intersection.point);
+                    this.pfxList.push(this.pfx);
                     break;
                 }
             }
@@ -774,26 +780,32 @@ class ParticleSystem {
 
 //enemy logic
 class Enemy {
-  constructor(scene, position, scale = 1, player) {
+  constructor(scene, position, scale = 1, player, ID) {
     this.scene = scene;
     this.position = position;
     this.scale = scale;
     this.model = null;
     this.player = player;
     this.forwardDirection = new THREE.Vector3(0, 0, 1);
-    this.userData = { id: "enemyID" + Math.random().toString(36).substr(2, 9) };
+    this.uniqueID = "enemy" + ID;
     this.loadModel();
   }
-
-
+  
+  
   loadModel() {
     const loader = new GLTFLoader();
       loader.loadAsync('../enemy/enemy-running.gltf').then(gltf=>{
         this.model = gltf.scene; // setting the model to the gltf argument
         this.model.scale.setScalar(this.scale); //setting the scale of the model (from spawner)
         this.model.position.copy(this.position); //setting the position of the model (from spawner)
+        let skinnedMesh;
+        this.model.traverse((child) => {
+          if (child.isSkinnedMesh) {
+            child.userData.enemyId = this.uniqueID; // Assign to the SkinnedMesh
+          }
+        });
         this.scene.add(this.model); // finally adding to the scene
-
+        
         if (gltf.animations && gltf.animations.length > 0) { //check the frames of the file are greater than 0
           this.mixer = new THREE.AnimationMixer(this.model); // create a new mixer
           gltf.animations.forEach((clip) => {
@@ -856,13 +868,17 @@ class EnemySpawner {
   constructor(scene, player) {
     this.init(scene, player);
   }
+
   init(scene, player) {
     this.scene = scene;
     this.enemies = [];
     this.spawnTimer = 0;
-    this.spawnInterval = 500;
+    this.spawnInterval = 500; // Initial spawn interval
     this.player = player;
     this.countdown = 500;
+    this.minSpawnInterval = 100; // Minimum spawn interval
+    this.spawnIntervalReductionRate = 0.98;
+    this.ID = 0;
   }
 
   spawn() {
@@ -871,26 +887,32 @@ class EnemySpawner {
     if (this.countdown > 0) {
       // Still in the countdown phase
       this.countdown -= 1;
-    }
-    else if (this.spawnTimer >= this.spawnInterval) {
+    } else if (this.spawnTimer >= this.spawnInterval) {
       this.spawnTimer = 0;
-      //create new enemy and set its position
-      const enemy = new Enemy(this.scene, new THREE.Vector3(), 18, this.player);
-      //apply promise after creation for the spawner to do the rest of the work once the model is loaded
-        // The model is fully loaded, continue
-        enemy.position.x = Math.random() * 500 - 250;
-        enemy.position.z = Math.random() * 500 - 250;
-        enemy.position = new THREE.Vector3(enemy.position.x, -8, enemy.position.z);
-        //add enemies to list
-        this.enemies.push(enemy);
-        if (this.spawnInterval > 100) {
-          // Gradually reduce the spawn interval
-          this.spawnInterval *= 0.95;
-        }
+
+      // Create a new enemy and set its position
+      const enemy = new Enemy(this.scene, new THREE.Vector3(), 18, this.player, this.ID);
+      this.ID++;
+      // The model is fully loaded, continue
+      enemy.position.x = Math.random() * 500 - 250;
+      enemy.position.z = Math.random() * 500 - 250;
+      enemy.position = new THREE.Vector3(enemy.position.x, -8, enemy.position.z);
+
+      // Add enemies to the list
+      this.enemies.push(enemy);
+
+      // Gradually reduce the spawn interval
+      this.spawnInterval *= this.spawnIntervalReductionRate;
+
+      // Ensure the spawn interval doesn't go below the minimum
+      if (this.spawnInterval < this.minSpawnInterval) {
+        this.spawnInterval = this.minSpawnInterval;
+      }
     }
   }
+
   removeEnemy(enemyInstance) {
-    this.enemies = this.enemies.filter(enemy => enemy !== enemyInstance);
+    this.enemies = this.enemies.filter((enemy) => enemy !== enemyInstance);
   }
 
   update(deltaTime) {
@@ -900,6 +922,7 @@ class EnemySpawner {
     }
   }
 }
+
 
 // LoadGame class that calls the init function on construction
 class LoadGame {
@@ -1080,7 +1103,10 @@ class LoadGame {
       this.spawner.update(timeElapsedSec);
     }
     if (this.rayCast.pfx) {
-      this.rayCast.pfx.update(timeElapsedSec);
+      for(const pfx of this.rayCast.pfxList)
+      {
+        pfx.update(timeElapsedSec);
+      }
     }
     this.plusAmmo.update(timeElapsedSec);
     this.thirdPersonCamera.update(timeElapsedSec);
