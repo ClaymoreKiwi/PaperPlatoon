@@ -1,14 +1,19 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-//character controller and updates for the character
+/*character controller and updates for the character
+* this class is responsible for all the player logic, inputs, shooting, movement, loading models etc
+* this class uses the following class's for implementation of some respective functionality
+* ##characterControllerInput
+* ##Bullet
+*/
 class CharacterController {
   constructor(params) {
     this.init(params);
   }
 
   init(params) {
-    this.params = params;
+    this.params = params; //params past in when the player controller is created in ##loadGame, camera, scene, spawner
     this.canMove = true;
     this.slowDown = new THREE.Vector3(-0.0005, -0.0001, -5.0);
     this.acceleration = new THREE.Vector3(1, 0.25, 50.0);
@@ -172,7 +177,11 @@ class CharacterController {
   }
 }
 
-//creation of the bullets 
+//creation of the bullets
+/*
+* This calss is responsible for updating the bullet and creating its geometry
+* it does not use any other classes, but is called and created by the player 
+*/ 
 class Bullet {
   constructor(scene, player) {
     this.scene = scene;
@@ -213,6 +222,11 @@ class Bullet {
 }
 
 //class to generate a complex grouped pickups
+/**
+ *This Class creates the geometry group for the ammo pick up by the player
+ *it does not use any other class but is called and created by the ammo spawner
+ *removal of the group and particles is done here
+ */
 class AmmoGroup{
   constructor(scene){
     this.scene = scene;
@@ -267,6 +281,11 @@ class AmmoGroup{
 }
 
 //create instancs of the ammoGroup for the player to pick up
+/**
+ * This class is responsible for spawning in the ammoGroup for the player to pick up, it is also used in the ##LoadGame Class and updated
+ * This calls the AmmoGroup class on creation and manages the array they are spawned into for collection and updating appropriately
+ * also called in the ##LoadGame and updated 
+ */
 class AmmoSpawner {
   //static array to avoid multiple ammo groups being created
   static ammoList = [];
@@ -309,6 +328,10 @@ class AmmoSpawner {
 }
 
 //has all the flags for the directional movement
+/**
+ * this class is called in the Character Controller class as a utilites class to handle keyboard and touch inputs
+ * any input handling should be included here so the controller class is not cluttered
+ */
 class CharacterControllerInput {
   constructor() {
     this.init();
@@ -439,6 +462,11 @@ class CharacterControllerInput {
 }
 
 //camera positioning to the player
+/**
+ * this class is called in the ##LoadGame and passed in the player controller to manage the movement of the camera system
+ * this is managed seprately and reacts to the position of the player and its diretion
+ * adjustments to the position should happen here
+ */
 class ThirdPersonCamera {
   constructor(params) {
     this.params = params;
@@ -477,6 +505,11 @@ class ThirdPersonCamera {
 }
 
 //add walls for the player
+/**
+ * This class is also called in the ##LoadGame and is responsible for the arena walls
+ * passing in parametes for height, width, offset and time, walls can be systematically created around the arena for less manual handling
+ * they are also updated over time using a sin wave form for animation.
+ */
 class WallManager {
   constructor(scene) {
     this.scene = scene;
@@ -544,6 +577,10 @@ class WallManager {
 }
 
 //instanced mesh for the visual obstacle for the player
+/**
+ * this is the instance mesh class used to randomly generate spheres as visual obstacles for the player
+ * quantity, position and scale can be adjusted here
+ */
 class VisualObstacle{
   constructor(scene){
     this.scene = scene;
@@ -578,6 +615,12 @@ class VisualObstacle{
 }
 
 //raycast collisions for the walls and the player
+/**
+ * handling all collision from player to enemy, player to wall, bullet to wall and enemy
+ * the ##ParticleSystem calss is called here on collision for VFX (Self managed)
+ * handling the removal of elements is done here too, bullet, and enemies
+ * other collisions can be added and managed here too
+ */
 class RaycastCollision {
   constructor(scene,player, wallManager, ammoItems, enemies, sound, gameOver) {
     this.scene = scene;
@@ -728,6 +771,10 @@ class RaycastCollision {
 }
 
 //particle system
+/**
+ * Particle system called by the ##raycast class for explosions when the bullet has impact
+ * size, shape, update and colour can easily be managed here
+ */
 class ParticleSystem {
   constructor(scene, position) {
     this.scene = scene;
@@ -779,6 +826,11 @@ class ParticleSystem {
 }
 
 //enemy logic
+/**
+ * enemy Class called by the ##enemySpawner
+ * updating chase mechanics as well as look at mechanics, animations and model loading
+ * behaviour of the enemy should be modified here
+ */
 class Enemy {
   constructor(scene, position, scale = 1, player, ID) {
     this.scene = scene;
@@ -863,6 +915,13 @@ class Enemy {
 }
 
 //enemy spawner
+/**
+ * Enemy Spawner class calles the ##Enemy when to spawn in and their positions in the world
+ * manages the array the ##raycasting class uses dor detection
+ * assigns enemy IDs for correct collision handling
+ * reduces spawn time over time to increase difficulty
+ * manages correct removal of enemies when removed from the list
+ */
 class EnemySpawner {
   constructor(scene, player) {
     this.init(scene, player);
@@ -924,6 +983,11 @@ class EnemySpawner {
 
 
 // LoadGame class that calls the init function on construction
+/**
+ * This is the Main function of the game, establishing the scene, camera, player, enemies etc..
+ * Modifications directly to the world happens here along with update functionality for all other classes
+ * Modifications here can directly impact functionality of every other class, edit carfully
+ */
 class LoadGame {
   constructor() {
     this.isGameOver = false;
@@ -1039,6 +1103,7 @@ class LoadGame {
   }
 
   loadAnimatedModel() {
+    //list of params sent to the player controller as params
     const params = {
       camera: this.camera,
       scene: this.scene,

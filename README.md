@@ -1,5 +1,5 @@
 DB PW: C9d11P5Bdc
-link: https://mywebgame--claymorekiwi.repl.co/html/Game.html - replit version 
+link: https://claymorekiwiserver.claymorekiwi.repl.co - replit version 
 github link : https://github.com/ClaymoreKiwi/PaperPlatoon
 
 Paper Platoon
@@ -88,12 +88,14 @@ Public-
 ---------------------------------------------------------------------------------------------------------------------------
 ##Refrences
 
-Paper Model:sketchfab.com. (2022). Paper Karateka - Download Free 3D model by jigenMal. [online] Available at: https://sketchfab.com/3d-models/paper-karateka-55f03f9ad1c14dea87db2a4e37355e52 [Accessed 10 Oct. 2023].
+Paper Model:
+sketchfab.com. (2022). Paper Karateka - Download Free 3D model by jigenMal. [online] Available at: https://sketchfab.com/3d-models/paper-karateka-55f03f9ad1c14dea87db2a4e37355e52 [Accessed 10 Oct. 2023].
 
 Loading:
 www.w3schools.com. (n.d.). How To Make a Loader. [online] Available at: https://www.w3schools.com/howto/howto_css_loader.asp.
 
-Character controls:simon, simonDev (2020). Simple Character Controller (using Three.js/JavaScript). [online] www.youtube.com. Available at: https://www.youtube.com/watch?v=EkPfhzIbp2g [Accessed 23 Oct. 2023].
+Character controls:
+simon, simonDev (2020). Simple Character Controller (using Three.js/JavaScript). [online] www.youtube.com. Available at: https://www.youtube.com/watch?v=EkPfhzIbp2g [Accessed 23 Oct. 2023].
 
 Character camera:
 Simon, S. (2020). Simple Third Person Camera (using Three.js/JavaScript). [online] www.youtube.com. Available at: https://www.youtube.com/watch?v=UuNPHOJ_V5o [Accessed 19 Oct. 2023]..
