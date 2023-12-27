@@ -59,13 +59,13 @@ app.post('/submit-score', async (req, res) => {
     if (!user) {
       return res.json({ status: 'error', error: 'User not found' });
     }
-
+   // set the user score if it is higher than the last
     if (score > user.highScore) {
       user.highScore = score;
       await user.save();
       return res.json({status: 'ok', data: score});
     }
-
+ //return invalid if the token has been tampered with - also returns unidentified as a score
     return res.json({ status: 'ok' });
   } catch (error) {
     return res.json({ status: 'error', error: 'Invalid token' });

@@ -71,6 +71,7 @@ class CharacterController {
       this.isFiring = true;
       //create new bullet
       this.bullet = new Bullet(this.params.scene, this.target);
+      this.params.throw.play();
       this.bullet.shoot();
       //add to array for updating
       this.bullets.push(this.bullet);
@@ -293,7 +294,7 @@ class AmmoSpawner {
   constructor(scene) {
     this.scene = scene;
     this.spawnTimer = 0;
-    this.spawnInterval = 500;
+    this.spawnInterval = 150;
     this.collision = false;
   }
   
@@ -622,7 +623,7 @@ class VisualObstacle{
  * other collisions can be added and managed here too
  */
 class RaycastCollision {
-  constructor(scene,player, wallManager, ammoItems, enemies, sound, gameOver) {
+  constructor(scene,player, wallManager, ammoItems, enemies, deathsound, Ammosound, gameOver) {
     this.scene = scene;
     this.player = player;
     this.wallManager = wallManager;
@@ -631,7 +632,8 @@ class RaycastCollision {
     this.bulletRaycaster = new THREE.Raycaster(undefined, undefined, 0, 3);
     this.direction = player.Direction;
     this.spawner = enemies;
-    this.sound = sound;
+    this.Dsound = deathsound;
+    this.ammoSound = Ammosound;
     this.gameOver = gameOver;
     this.pfx = null;
     this.pfxList = [];
@@ -682,7 +684,7 @@ class RaycastCollision {
       }
     }
     if (this.enemyIntersections.length > 0) {
-      this.sound.play();
+      this.Dsound.play();
       this.gameOver.setGameOver();
     }
     if (ammoIntersections.length > 0) {
@@ -698,6 +700,7 @@ class RaycastCollision {
           // Handle ammo pickup
           this.player.ammunition += 5;
           this.player.score += 100;
+          this.ammoSound.play();
           AmmoSpawner.removeAmmoFromList(intersectedAmmo); //remove ammo from intersect list (cannot be interacted with)
           this.scene.remove(intersectedAmmo.group) // remove mesh from scene
         }
@@ -1100,6 +1103,20 @@ class LoadGame {
       this.deathSound.setLoop(false);
       this.deathSound.setVolume(1);
     });
+
+    this.throwSound = new THREE.Audio(this.listener);
+    this.audioLoader.load('../sounds/whoosh.mp3', (buffer) => {
+      this.throwSound.setBuffer(buffer);
+      this.throwSound.setLoop(false);
+      this.throwSound.setVolume(0.5);
+    });
+
+    this.crumpleSound = new THREE.Audio(this.listener);
+    this.audioLoader.load('../sounds/crumple.mp3', (buffer) => {
+      this.crumpleSound.setBuffer(buffer);
+      this.crumpleSound.setLoop(false);
+      this.crumpleSound.setVolume(0.5);
+    });
   }
 
   loadAnimatedModel() {
@@ -1108,6 +1125,7 @@ class LoadGame {
       camera: this.camera,
       scene: this.scene,
       spawner: this.spawner,
+      throw: this.throwSound,
     }
     const Obstacle = new VisualObstacle(this.scene);
     //add player instance
@@ -1120,7 +1138,7 @@ class LoadGame {
     this.thirdPersonCamera = new ThirdPersonCamera({ camera: this.camera, target: this.player });
 
     //check raycast for the player detection
-    this.rayCast = new RaycastCollision(this.scene,this.player, this.wallBuilder, this.plusAmmo, this.spawner, this.deathSound, this);
+    this.rayCast = new RaycastCollision(this.scene,this.player, this.wallBuilder, this.plusAmmo, this.spawner, this.deathSound, this.crumpleSound, this);
   }
 
   // Update the camera and renderer size when the window is resized
