@@ -271,7 +271,8 @@ class AmmoGroup{
     setTimeout(() => {
       this.scene.remove(this.group);
       AmmoSpawner.removeAmmoFromList(this);
-    }, 5000);
+      console.log("destroyed")
+    }, 10000);
   }
 
   update(deltaTime){
@@ -294,7 +295,7 @@ class AmmoSpawner {
   constructor(scene) {
     this.scene = scene;
     this.spawnTimer = 0;
-    this.spawnInterval = 150;
+    this.spawnInterval = 500;
     this.collision = false;
   }
   
@@ -310,6 +311,7 @@ class AmmoSpawner {
       this.scene.add(ammo.group);
       // Add the new ammo instance to the list
       AmmoSpawner.ammoList.push(ammo);
+      console.log("created")
       ammo.removal();
     }
   }
@@ -741,8 +743,8 @@ class RaycastCollision {
             for (const intersection of enemyIntersections) {
                 const hitEnemy = this.spawner.enemies.find(enemy => enemy.uniqueID === intersection.object.userData.enemyId);
 
-                console.log("Enemy UUIDs:", this.spawner.enemies.map(enemy => enemy.uniqueID));
-                console.log("Intersection UUID:", intersection.object);
+                //console.log("Enemy UUIDs:", this.spawner.enemies.map(enemy => enemy.uniqueID));
+                //console.log("Intersection UUID:", intersection.object);
 
                 if (hitEnemy) {
                     this.player.score += 500;
@@ -835,12 +837,13 @@ class ParticleSystem {
  * behaviour of the enemy should be modified here
  */
 class Enemy {
-  constructor(scene, position, scale = 1, player, ID) {
+  constructor(scene, position, scale = 1, speed, player, ID) {
     this.scene = scene;
     this.position = position;
     this.scale = scale;
     this.model = null;
     this.player = player;
+    this.speed = speed;
     this.forwardDirection = new THREE.Vector3(0, 0, 1);
     this.uniqueID = "enemy" + ID;
     this.loadModel();
@@ -873,7 +876,7 @@ class Enemy {
     if (!this.model || !this.player) {
       return;
     }
-    const speed = Math.random() * (0.8 - 0.2) + 0.2;
+    const speed = this.speed;
     // Calculate the direction vector from the enemy to the player
     const direction = new THREE.Vector3();
     direction.subVectors(this.player.Position, this.model.position).normalize();
@@ -939,6 +942,7 @@ class EnemySpawner {
     this.countdown = 500;
     this.minSpawnInterval = 100; // Minimum spawn interval
     this.spawnIntervalReductionRate = 0.98;
+    this.enemySpeed = 0.2;
     this.ID = 0;
   }
 
@@ -952,8 +956,12 @@ class EnemySpawner {
       this.spawnTimer = 0;
 
       // Create a new enemy and set its position
-      const enemy = new Enemy(this.scene, new THREE.Vector3(), 18, this.player, this.ID);
+      const enemy = new Enemy(this.scene, new THREE.Vector3(), 18, this.enemySpeed, this.player, this.ID);
       this.ID++;
+      if(this.enemySpeed < 1.2)
+      {
+       this.enemySpeed += 0.1;
+      }
       // The model is fully loaded, continue
       enemy.position.x = Math.random() * 500 - 250;
       enemy.position.z = Math.random() * 500 - 250;
