@@ -1,6 +1,7 @@
 DB PW: C9d11P5Bdc
 link: https://claymorekiwiserver.claymorekiwi.repl.co - replit version 
 github link : https://github.com/ClaymoreKiwi/PaperPlatoon
+Youtube Link: https://www.youtube.com/watch?v=-uaPfkczMyM
 
 Paper Platoon
 This game is a simple survival game where the player gains points for surviving for longer and longer periods of time.
